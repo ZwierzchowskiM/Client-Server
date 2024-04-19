@@ -11,7 +11,6 @@ public class ServerResponse {
 
     Map<String, Integer> uptime = new HashMap<>();
     Map<String, String> info = new HashMap<>();
-    Server server;
 
     public ServerResponse() {
     }

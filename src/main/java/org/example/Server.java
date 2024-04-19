@@ -19,6 +19,8 @@ public class Server {
     private PrintWriter out;
     private BufferedReader in;
     private Instant startTime;
+    static final String SERVER_VERSION = "0.0.1";
+    static final String SERVER_CREATION_DATE = "19.04.2024";
 
     public static void main(String[] args) throws IOException {
 
@@ -86,6 +88,4 @@ public class Server {
             System.out.println("Error closing server");
         }
     }
-
-
 }

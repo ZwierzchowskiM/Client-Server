@@ -11,13 +11,16 @@ public class Client {
     private Socket clientSocket;
     private PrintWriter out;
     private BufferedReader in;
-    private Scanner scanner = new Scanner(System.in);
+    private final Scanner scanner = new Scanner(System.in);
+    private static final String CLIENT_IP = "127.0.0.1";
+    private static final int CLIENT_PORT = 6666;
 
 
     public static void main(String[] args) throws IOException {
 
         Client client = new Client();
-        client.startConnection("localHost",6666);
+        client.startConnection(CLIENT_IP,CLIENT_PORT);
+
     }
 
     public void startConnection(String ip, int port) throws IOException {
