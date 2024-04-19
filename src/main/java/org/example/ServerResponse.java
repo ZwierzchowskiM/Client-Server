@@ -1,39 +1,40 @@
 package org.example;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+import java.net.Socket;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+
 public class ServerResponse {
 
-    private int hours;
-    private int minutes;
-    private int seconds;
 
+    Map<String, Integer> uptime = new HashMap<>();
+    Map<String, String> commands = new HashMap<>();
+    Map<String, String> info = new HashMap<>();
+    Server server;
 
-    public ServerResponse(int hours, int minutes, int seconds) {
-        this.hours = hours;
-        this.minutes = minutes;
-        this.seconds = seconds;
+    public ServerResponse(Server server) {
+        this.server = server;
     }
 
-    public int getHours() {
-        return hours;
+    public void calculateUptime(Instant startTime) throws JsonProcessingException {
+        Duration uptime = Duration.between(startTime, Instant.now());
+        this.uptime.put("hours", uptime.toHoursPart());
+        this.uptime.put("minutes", uptime.toMinutesPart());
+        this.uptime.put("seconds", uptime.toSecondsPart());
     }
 
-    public void setHours(int hours) {
-        this.hours = hours;
+    public void printCommands() {
+        commands.put("uptime", "Returns the server's uptime");
+        commands.put("info", "Returns the server's version number and creation date");
+        commands.put("help", "Returns a list of available commands with a brief description");
+        commands.put("stop", "stops both the server and the client simultaneously");
     }
 
-    public int getMinutes() {
-        return minutes;
-    }
 
-    public void setMinutes(int minutes) {
-        this.minutes = minutes;
-    }
-
-    public int getSeconds() {
-        return seconds;
-    }
-
-    public void setSeconds(int seconds) {
-        this.seconds = seconds;
-    }
 }
