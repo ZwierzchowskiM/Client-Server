@@ -18,8 +18,6 @@ public class Client {
 
         Client client = new Client();
         client.startConnection("localHost",6666);
-        client.sendMessage("uptime");
-
     }
 
     public void startConnection(String ip, int port) throws IOException {
@@ -28,20 +26,20 @@ public class Client {
         out = new PrintWriter(clientSocket.getOutputStream(), true);
         in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 
-        System.out.println("start");
+        System.out.println("Client started");
 
         while (clientSocket.isConnected()){
 
             String input = scanner.nextLine();
 
             switch (input) {
-                case "uptime" -> sendMessage("uptime");
-                case "info" -> System.out.println("info version");
-                case "help" -> System.out.println("help");
-                case "stop" -> stopConnection();
+                case "uptime", "info","help" -> sendMessage(input);
+                case "stop" -> {
+                    sendMessage("stop");
+                    stopConnection();
+                }
                 default -> System.out.println("unknown");
             };
-
         }
     }
 
@@ -58,6 +56,4 @@ public class Client {
         out.close();
         clientSocket.close();
     }
-
-
 }

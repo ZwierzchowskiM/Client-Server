@@ -9,13 +9,12 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.time.Duration;
 import java.time.Instant;
+
 
 public class Server {
 
-
-    //    private ServerSocket serverSocket;
+    private ServerSocket serverSocket;
     private Socket clientSocket;
     private PrintWriter out;
     private BufferedReader in;
@@ -23,40 +22,69 @@ public class Server {
 
     public static void main(String[] args) throws IOException {
 
-        Server server = new Server();
-        server.start(6666);
+        Server server = new Server(6666);
+        server.start();
     }
 
-    public void start(int port) {
-        try (
-                ServerSocket serverSocket = new ServerSocket(port)) {
-            startTime = Instant.now();
-            Socket clientSocket = serverSocket.accept();
-            PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
-            BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-            System.out.println("connected");
+    public Server(int port) throws IOException {
+        serverSocket = new ServerSocket(port);
+        startTime = Instant.now();
+        System.out.println("Server started on port " + port);
+    }
 
-            String inputLine;
-            while ((inputLine = in.readLine()) != null) {
+    public void start() {
+        try {
 
-                String translation = switch (inputLine) {
-                    case "uptime" -> getUptime();
-                    default -> "unknown";
-                };
-                out.println(translation);
+            clientSocket = serverSocket.accept();
+            System.out.println("Client connected");
+
+            out = new PrintWriter(clientSocket.getOutputStream(), true);
+            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+
+            String clientRequest;
+            while ((clientRequest = in.readLine()) != null) {
+                String response = handleRequest(clientRequest);
+                out.println(response);
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public String getUptime() throws JsonProcessingException {
-        Duration uptime = Duration.between(startTime, Instant.now());
-        ServerResponse response = new ServerResponse(uptime.toHoursPart(), uptime.toMinutesPart(), uptime.toSecondsPart());
-        ObjectMapper objectMapper = new ObjectMapper();
-        String jsonResponse = objectMapper.writeValueAsString(response);
+    public String handleRequest(String request) throws JsonProcessingException {
 
-        return jsonResponse;
+        ObjectMapper mapper = new ObjectMapper();
+        ServerResponse response = new ServerResponse();
+
+        String serverResponse = switch (request) {
+            case "uptime" -> {
+                response.calculateUptime(startTime);
+                yield mapper.writeValueAsString(response.uptime);
+            }
+            case "help" -> {
+                response.printServerCommands();
+                yield mapper.writeValueAsString(response.info);
+            }
+            case "info" -> {
+                response.printServerInfo();
+                yield mapper.writeValueAsString(response.info);
+            }
+            case "stop" -> {
+                stopServer();
+                yield "server stopped";
+            }
+            default -> ("command unknown");
+        };
+
+        return serverResponse;
+    }
+
+    private void stopServer() {
+        try {
+            serverSocket.close();
+        } catch (IOException e) {
+            System.out.println("Error closing server");
+        }
     }
 
 
