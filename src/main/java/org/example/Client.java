@@ -1,5 +1,7 @@
 package org.example;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -20,16 +22,15 @@ public class Client {
     private final Scanner scanner = new Scanner(System.in);
     private static final String CLIENT_IP = "127.0.0.1";
     private static final int CLIENT_PORT = 6666;
-
+    private static final ObjectMapper mapper = new ObjectMapper();
 
     public static void main(String[] args) {
 
         Client client = new Client();
-
         try {
             client.startConnection(CLIENT_IP, CLIENT_PORT);
         } catch (RuntimeException e) {
-            logger.error("starting connection");
+            logger.error("connection error");
         }
     }
 
@@ -46,7 +47,6 @@ public class Client {
         }
 
         while (clientSocket.isConnected()) {
-
             String input = scanner.nextLine();
             switch (input) {
                 case "uptime", "info", "help" -> sendMessage(input);
@@ -63,9 +63,20 @@ public class Client {
         out.println(msg);
         try {
             String resp = in.readLine();
+            handleResponse(resp);
         } catch (IOException e) {
             logger.error("error reading message from server");
             throw new RuntimeException(e);
+        }
+    }
+
+    public void handleResponse(String jsonResp) {
+        try {
+            JsonNode rootNode = mapper.readTree(jsonResp);
+            String prettyString = rootNode.toPrettyString();
+            logger.error(prettyString);
+        } catch (IOException e) {
+            System.out.println("Error processing JSON response: " + e.getMessage());
         }
     }
 

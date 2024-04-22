@@ -1,6 +1,7 @@
 package org.example;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -9,28 +10,23 @@ import java.util.Map;
 
 public class ServerResponse {
 
-    Map<String, Integer> uptime = new HashMap<>();
-    Map<String, String> info = new HashMap<>();
+    private ObjectMapper mapper = new ObjectMapper();
 
-    public ServerResponse() {
+    public String calculateUptime(Instant startTime) throws JsonProcessingException {
+        Duration serverUptime = Duration.between(startTime, Instant.now());
+        Map<String, Integer> uptimeResponse = new HashMap<>();
+        uptimeResponse.put("hours", serverUptime.toHoursPart());
+        uptimeResponse.put("minutes", serverUptime.toMinutesPart());
+        uptimeResponse.put("seconds", serverUptime.toSecondsPart());
+        return mapper.writeValueAsString(uptimeResponse);
     }
 
-    public void calculateUptime(Instant startTime) throws JsonProcessingException {
-        Duration uptime = Duration.between(startTime, Instant.now());
-        this.uptime.put("hours", uptime.toHoursPart());
-        this.uptime.put("minutes", uptime.toMinutesPart());
-        this.uptime.put("seconds", uptime.toSecondsPart());
+    public String printServerCommands(Map<String, String> commandsInfo) throws JsonProcessingException {
+        return mapper.writeValueAsString(commandsInfo);
     }
 
-    public void printServerCommands() {
-        info.put("uptime", "Returns the server's uptime");
-        info.put("info", "Returns the server's version number and creation date");
-        info.put("help", "Returns a list of available commands with a brief description");
-        info.put("stop", "stops both the server and the client simultaneously");
+    public String printServerInfo(Map<String, String> serverInfo) throws JsonProcessingException {
+        return mapper.writeValueAsString(serverInfo);
     }
 
-    public void printServerInfo() {
-        info.put("version", Server.SERVER_VERSION);
-        info.put("creation date", Server.SERVER_CREATION_DATE);
-    }
 }

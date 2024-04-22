@@ -1,7 +1,6 @@
 package org.example;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -22,19 +21,7 @@ public class Server {
     private PrintWriter out;
     private BufferedReader in;
     private Instant startTime;
-    static final String SERVER_VERSION = "0.0.1";
-    static final String SERVER_CREATION_DATE = "19.04.2024";
-
-    public static void main(String[] args) {
-
-
-        Server server = new Server(6666);
-        try {
-            server.start();
-        } catch (RuntimeException e) {
-            logger.error("starting connection");
-        }
-    }
+    private ServerData serverData;
 
     public Server(int port) {
         try {
@@ -43,8 +30,19 @@ public class Server {
             logger.error("Error creating server");
             throw new RuntimeException(e);
         }
+        serverData = new ServerData();
         startTime = Instant.now();
         logger.info("Server started on port " + port);
+    }
+
+    public static void main(String[] args) {
+
+        Server server = new Server(6666);
+        try {
+            server.start();
+        } catch (RuntimeException e) {
+            logger.error("starting connection");
+        }
     }
 
     public void start() {
@@ -68,29 +66,24 @@ public class Server {
 
     public String handleRequest(String request) throws JsonProcessingException {
 
-        ObjectMapper mapper = new ObjectMapper();
         ServerResponse response = new ServerResponse();
 
-        String serverResponse = switch (request) {
-            case "uptime" -> {
-                response.calculateUptime(startTime);
-                yield mapper.writeValueAsString(response.uptime);
-            }
-            case "help" -> {
-                response.printServerCommands();
-                yield mapper.writeValueAsString(response.info);
-            }
-            case "info" -> {
-                response.printServerInfo();
-                yield mapper.writeValueAsString(response.info);
-            }
-            case "stop" -> {
-                stopServer();
-                yield "server stopped";
-            }
-            default -> ("command unknown");
-        };
-        return serverResponse;
+        try {
+            String serverResponse = switch (request) {
+                case "uptime" -> response.calculateUptime(startTime);
+                case "help" -> response.printServerInfo(serverData.getServerInfo());
+                case "info" -> response.printServerCommands(serverData.getCommandInfo());
+                case "stop" -> {
+                    stopServer();
+                    yield "server stopped";
+                }
+                default -> ("command unknown");
+            };
+            return serverResponse;
+        } catch (JsonProcessingException e) {
+            logger.error("Error in generating JSON response");
+            return "{\"error\": \"Internal server error\"}";
+        }
     }
 
     private void stopServer() {
