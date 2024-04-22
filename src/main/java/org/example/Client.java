@@ -1,5 +1,8 @@
 package org.example;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -8,6 +11,9 @@ import java.net.Socket;
 import java.util.Scanner;
 
 public class Client {
+
+    private static Logger logger = LogManager.getLogger(Client.class);
+
     private Socket clientSocket;
     private PrintWriter out;
     private BufferedReader in;
@@ -16,47 +22,63 @@ public class Client {
     private static final int CLIENT_PORT = 6666;
 
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
 
         Client client = new Client();
-        client.startConnection(CLIENT_IP,CLIENT_PORT);
 
+        try {
+            client.startConnection(CLIENT_IP, CLIENT_PORT);
+        } catch (RuntimeException e) {
+            logger.error("starting connection");
+        }
     }
 
-    public void startConnection(String ip, int port) throws IOException {
+    public void startConnection(String ip, int port) {
 
-        clientSocket = new Socket(ip, port);
-        out = new PrintWriter(clientSocket.getOutputStream(), true);
-        in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+        try {
+            clientSocket = new Socket(ip, port);
+            out = new PrintWriter(clientSocket.getOutputStream(), true);
+            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+            logger.info("Client connected to server");
+        } catch (IOException e) {
+            logger.error("error connecting to server");
+            throw new RuntimeException(e);
+        }
 
-        System.out.println("Client started");
-
-        while (clientSocket.isConnected()){
+        while (clientSocket.isConnected()) {
 
             String input = scanner.nextLine();
-
             switch (input) {
-                case "uptime", "info","help" -> sendMessage(input);
+                case "uptime", "info", "help" -> sendMessage(input);
                 case "stop" -> {
                     sendMessage("stop");
                     stopConnection();
                 }
-                default -> System.out.println("unknown");
-            };
+                default -> logger.info("request unknown");
+            }
         }
     }
 
-    public String sendMessage(String msg) throws IOException {
+    public void sendMessage(String msg) {
         out.println(msg);
-        String resp = in.readLine();
-        System.out.println(resp);
-        return resp;
+        try {
+            String resp = in.readLine();
+        } catch (IOException e) {
+            logger.error("error reading message from server");
+            throw new RuntimeException(e);
+        }
     }
 
-    public void stopConnection() throws IOException {
-        System.out.println("stopping connection");
-        in.close();
-        out.close();
-        clientSocket.close();
+    public void stopConnection() {
+
+        try {
+            in.close();
+            out.close();
+            clientSocket.close();
+            logger.info("connection stopped");
+        } catch (IOException e) {
+            logger.error("error stopping connection");
+            throw new RuntimeException(e);
+        }
     }
 }

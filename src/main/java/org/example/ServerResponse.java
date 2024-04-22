@@ -30,7 +30,7 @@ public class ServerResponse {
     }
 
     public void printServerInfo() {
-        info.put("version", "1.0.0");
-        info.put("creation date", "19.04.2024");
+        info.put("version", Server.SERVER_VERSION);
+        info.put("creation date", Server.SERVER_CREATION_DATE);
     }
 }
