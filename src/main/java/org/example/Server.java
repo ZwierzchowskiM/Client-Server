@@ -17,9 +17,6 @@ public class Server {
 
     private static Logger logger = LogManager.getLogger(Server.class);
     private ServerSocket serverSocket;
-    private Socket clientSocket;
-    private PrintWriter out;
-    private BufferedReader in;
     private Instant startTime;
     private ServerData serverData;
 
@@ -27,7 +24,7 @@ public class Server {
         try {
             serverSocket = new ServerSocket(port);
         } catch (IOException e) {
-            logger.error("Error creating server");
+            logger.error("Error creating server" + e.getMessage());
             throw new RuntimeException(e);
         }
         serverData = new ServerData();
@@ -46,23 +43,25 @@ public class Server {
     }
 
     public void start() {
-        try {
-            clientSocket = serverSocket.accept();
+        try (
+                Socket clientSocket = serverSocket.accept();
+                PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+                BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))
+
+        ) {
+
             logger.info("Client connected");
-
-            out = new PrintWriter(clientSocket.getOutputStream(), true);
-            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-
             String clientRequest;
             while ((clientRequest = in.readLine()) != null) {
                 String response = handleRequest(clientRequest);
                 out.println(response);
             }
         } catch (IOException e) {
-            logger.error("Error connecting client");
+            logger.error("Error connecting client" + e.getMessage());
             throw new RuntimeException(e);
         }
     }
+
 
     public String handleRequest(String request) throws JsonProcessingException {
 
@@ -90,7 +89,7 @@ public class Server {
         try {
             serverSocket.close();
         } catch (IOException e) {
-            logger.error("Error closing server");
+            logger.error("Error closing server" + e.getMessage());
             throw new RuntimeException(e);
         }
     }

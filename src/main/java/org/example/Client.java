@@ -14,15 +14,11 @@ import java.util.Scanner;
 
 public class Client {
 
-    private static Logger logger = LogManager.getLogger(Client.class);
-
-    private Socket clientSocket;
-    private PrintWriter out;
-    private BufferedReader in;
-    private final Scanner scanner = new Scanner(System.in);
+    private static final Logger logger = LogManager.getLogger(Client.class);
+    private static final Scanner scanner = new Scanner(System.in);
+    private static final ObjectMapper mapper = new ObjectMapper();
     private static final String CLIENT_IP = "127.0.0.1";
     private static final int CLIENT_PORT = 6666;
-    private static final ObjectMapper mapper = new ObjectMapper();
 
     public static void main(String[] args) {
 
@@ -30,42 +26,45 @@ public class Client {
         try {
             client.startConnection(CLIENT_IP, CLIENT_PORT);
         } catch (RuntimeException e) {
-            logger.error("connection error");
+            logger.error("connection error" + e.getMessage());
         }
     }
 
     public void startConnection(String ip, int port) {
-
-        try {
-            clientSocket = new Socket(ip, port);
-            out = new PrintWriter(clientSocket.getOutputStream(), true);
-            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+        try (
+                Socket clientSocket = new Socket(ip, port);
+                PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+                BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))
+        ) {
             logger.info("Client connected to server");
-        } catch (IOException e) {
-            logger.error("error connecting to server");
-            throw new RuntimeException(e);
-        }
 
-        while (clientSocket.isConnected()) {
-            String input = scanner.nextLine();
-            switch (input) {
-                case "uptime", "info", "help" -> sendMessage(input);
-                case "stop" -> {
-                    sendMessage("stop");
-                    stopConnection();
+            String input;
+            while (!clientSocket.isClosed()) {
+                logger.info("Type what you want to do ");
+                input = scanner.nextLine();
+                switch (input) {
+                    case "uptime", "info", "help" -> sendMessage(out, in, input);
+                    case "stop" -> {
+                        sendMessage(out, in, "stop");
+                        stopConnection();
+                        return;
+                    }
+                    default -> logger.info("request unknown");
                 }
-                default -> logger.info("request unknown");
             }
+        } catch (IOException e) {
+            logger.error("Error connecting to server: " + e.getMessage());
+            throw new RuntimeException(e);
         }
     }
 
-    public void sendMessage(String msg) {
+    private void sendMessage(PrintWriter out, BufferedReader in, String msg) {
         out.println(msg);
         try {
             String resp = in.readLine();
             handleResponse(resp);
         } catch (IOException e) {
-            logger.error("error reading message from server");
+            logger.error("Error reading message from server: " + e.getMessage());
             throw new RuntimeException(e);
         }
     }
@@ -74,22 +73,13 @@ public class Client {
         try {
             JsonNode rootNode = mapper.readTree(jsonResp);
             String prettyString = rootNode.toPrettyString();
-            logger.error(prettyString);
+            logger.info(prettyString);
         } catch (IOException e) {
             System.out.println("Error processing JSON response: " + e.getMessage());
         }
     }
 
     public void stopConnection() {
-
-        try {
-            in.close();
-            out.close();
-            clientSocket.close();
             logger.info("connection stopped");
-        } catch (IOException e) {
-            logger.error("error stopping connection");
-            throw new RuntimeException(e);
-        }
     }
 }
