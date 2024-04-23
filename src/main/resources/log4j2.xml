@@ -1,6 +1,6 @@
 <Configuration status="info" >
     <Properties >
-                <Property name="layout"> %d{yyyy-MM-dd HH:mm:ss} %p %m%n </Property>
+                <Property name="layout"> %d{yyyy-MM-dd HH:mm:ss} %p %n%m%n  </Property>
     </Properties>
 
     <Appenders>

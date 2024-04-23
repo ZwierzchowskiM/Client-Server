@@ -47,9 +47,7 @@ public class Server {
                 Socket clientSocket = serverSocket.accept();
                 PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
                 BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))
-
         ) {
-
             logger.info("Client connected");
             String clientRequest;
             while ((clientRequest = in.readLine()) != null) {
@@ -62,20 +60,15 @@ public class Server {
         }
     }
 
-
     public String handleRequest(String request) throws JsonProcessingException {
 
         ServerResponse response = new ServerResponse();
-
         try {
             String serverResponse = switch (request) {
                 case "uptime" -> response.calculateUptime(startTime);
-                case "help" -> response.printServerInfo(serverData.getServerInfo());
-                case "info" -> response.printServerCommands(serverData.getCommandInfo());
-                case "stop" -> {
-                    stopServer();
-                    yield "server stopped";
-                }
+                case "help" -> response.printServerCommands(serverData.getCommandInfo());
+                case "info" -> response.printServerInfo(serverData.getServerInfo());
+                case "stop" -> stopServer();
                 default -> ("command unknown");
             };
             return serverResponse;
@@ -85,9 +78,10 @@ public class Server {
         }
     }
 
-    private void stopServer() {
+    private String stopServer() {
         try {
             serverSocket.close();
+            return "{\"info\": \"server stopped\"}";
         } catch (IOException e) {
             logger.error("Error closing server" + e.getMessage());
             throw new RuntimeException(e);

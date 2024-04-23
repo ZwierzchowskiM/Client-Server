@@ -24,13 +24,13 @@ public class Client {
 
         Client client = new Client();
         try {
-            client.startConnection(CLIENT_IP, CLIENT_PORT);
+            client.start(CLIENT_IP, CLIENT_PORT);
         } catch (RuntimeException e) {
             logger.error("connection error" + e.getMessage());
         }
     }
 
-    public void startConnection(String ip, int port) {
+    public void start(String ip, int port) {
         try (
                 Socket clientSocket = new Socket(ip, port);
                 PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
@@ -40,12 +40,12 @@ public class Client {
 
             String input;
             while (!clientSocket.isClosed()) {
-                logger.info("Type what you want to do ");
+                logger.info(printOptions());
                 input = scanner.nextLine();
                 switch (input) {
-                    case "uptime", "info", "help" -> sendMessage(out, in, input);
+                    case "uptime", "info", "help" -> messageServer(out, in, input);
                     case "stop" -> {
-                        sendMessage(out, in, "stop");
+                        messageServer(out, in, "stop");
                         stopConnection();
                         return;
                     }
@@ -58,7 +58,7 @@ public class Client {
         }
     }
 
-    private void sendMessage(PrintWriter out, BufferedReader in, String msg) {
+    private void messageServer(PrintWriter out, BufferedReader in, String msg) {
         out.println(msg);
         try {
             String resp = in.readLine();
@@ -80,6 +80,10 @@ public class Client {
     }
 
     public void stopConnection() {
-            logger.info("connection stopped");
+        logger.info("connection stopped");
+    }
+
+    private String printOptions() {
+        return "Choose an option: uptime,info,help,stop";
     }
 }
