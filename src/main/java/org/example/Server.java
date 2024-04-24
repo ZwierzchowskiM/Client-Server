@@ -51,6 +51,7 @@ public class Server {
             logger.info("Client connected");
             String clientRequest;
             while ((clientRequest = in.readLine()) != null) {
+                logger.info("Client request: " + clientRequest);
                 String response = handleRequest(clientRequest);
                 out.println(response);
             }
@@ -69,7 +70,7 @@ public class Server {
                 case "help" -> response.printServerCommands(serverData.getCommandInfo());
                 case "info" -> response.printServerInfo(serverData.getServerInfo());
                 case "stop" -> stopServer();
-                default -> ("command unknown");
+                default -> ("{\"info\": \"command unknown\"}");
             };
             return serverResponse;
         } catch (JsonProcessingException e) {
