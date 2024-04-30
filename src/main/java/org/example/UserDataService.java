@@ -5,8 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public class UserDataService {
 
@@ -14,22 +14,22 @@ public class UserDataService {
     private static final String FILE_PATH = "./users.json";
 
     public void addUser(User newUser) throws IOException {
-        List<User> users = loadUsers();
-        users.add(newUser);
+        Map<String, User> users = loadUsers();
+        users.put(newUser.getUsername(),newUser);
         saveUsers(users);
     }
 
-    public List<User> loadUsers() throws IOException {
+    public Map<String,User> loadUsers() throws IOException {
         File file = new File(FILE_PATH);
         if (file.exists() && file.length() != 0) {
-            return mapper.readValue(file, new TypeReference<List<User>>() {});
+            return mapper.readValue(file, new TypeReference<Map<String,User>>() {});
         } else {
-            return new ArrayList<>();
+            return new HashMap<String,User>();
         }
     }
 
-    public void saveUsers(List<User> users) throws IOException {
+    public void saveUsers(Map<String,User> users) throws IOException {
         File file = new File(FILE_PATH);
-        mapper.writerFor(new TypeReference<List<User>>() { }).writeValue(file, users);
+        mapper.writerFor(new TypeReference<Map<String,User>>() { }).writeValue(file, users);
     }
 }
