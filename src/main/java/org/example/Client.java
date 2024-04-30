@@ -17,8 +17,8 @@ public class Client {
     private static final Logger logger = LogManager.getLogger(Client.class);
     private static final Scanner scanner = new Scanner(System.in);
     private static final ObjectMapper mapper = new ObjectMapper();
-    private static final String CLIENT_IP = "127.0.0.1";
-    private static final int CLIENT_PORT = 6666;
+    static final String CLIENT_IP = "127.0.0.1";
+    static final int CLIENT_PORT = 6666;
 
     public static void main(String[] args) {
 
@@ -43,6 +43,10 @@ public class Client {
                 logger.info(printOptions());
                 input = scanner.nextLine();
                 switch (input) {
+                    case "register" -> {
+                        messageServer(out,in,input);
+                        handleRegistrationProcess(in,out);
+                    }
                     case "uptime", "info", "help" -> messageServer(out, in, input);
                     case "stop" -> {
                         messageServer(out, in, "stop");
@@ -75,7 +79,7 @@ public class Client {
             String prettyString = rootNode.toPrettyString();
             logger.info(prettyString);
         } catch (IOException e) {
-            System.out.println("Error processing JSON response: " + e.getMessage());
+            logger.error("Error processing JSON response: " + e.getMessage());
         }
     }
 
@@ -84,6 +88,22 @@ public class Client {
     }
 
     private String printOptions() {
-        return "Choose an option: uptime,info,help,stop";
+        return "Choose an option: register,uptime,info,help,stop";
+    }
+
+    private void handleRegistrationProcess(BufferedReader in, PrintWriter out) throws IOException {
+        System.out.println("Enter username:");
+        String username = scanner.nextLine();
+        System.out.println("Enter password:");
+        String password = scanner.nextLine();
+        System.out.println("Enter role:");
+        String role = scanner.nextLine();
+
+        out.println(username);
+        out.println(password);
+        out.println(role);
+
+        String confirmation = in.readLine();
+        System.out.println(confirmation);
     }
 }

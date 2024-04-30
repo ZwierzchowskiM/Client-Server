@@ -2,6 +2,7 @@ package org.example;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,10 +14,17 @@ public class UserDataService {
     private final ObjectMapper mapper = new ObjectMapper();
     private static final String FILE_PATH = "./users.json";
 
-    public void addUser(User newUser) throws IOException {
+    public User addUser(String username, String password, String role) throws IOException {
         Map<String, User> users = loadUsers();
-        users.put(newUser.getUsername(),newUser);
+        User newUser = switch (role) {
+            case "normal" -> new NormalUser(username, password);
+            case "admin" -> new Admin(username, password);
+            default -> throw new IllegalStateException("Unexpected value: " + role);
+        };
+
+        users.put(username,newUser);
         saveUsers(users);
+        return newUser;
     }
 
     public Map<String,User> loadUsers() throws IOException {
@@ -30,6 +38,7 @@ public class UserDataService {
 
     public void saveUsers(Map<String,User> users) throws IOException {
         File file = new File(FILE_PATH);
+        mapper.enable(SerializationFeature.INDENT_OUTPUT);
         mapper.writerFor(new TypeReference<Map<String,User>>() { }).writeValue(file, users);
     }
 }

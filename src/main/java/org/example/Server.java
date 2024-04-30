@@ -19,6 +19,9 @@ public class Server {
     private ServerSocket serverSocket;
     private Instant startTime;
     private ServerData serverData;
+    private UserDataService userDataService;
+    PrintWriter out ;
+    BufferedReader in ;
 
     public Server(int port) {
         try {
@@ -28,6 +31,7 @@ public class Server {
             throw new RuntimeException(e);
         }
         serverData = new ServerData();
+        userDataService = new UserDataService();
         startTime = Instant.now();
         logger.info("Server started on port " + port);
     }
@@ -43,17 +47,17 @@ public class Server {
     }
 
     public void start() {
-        try (
-                Socket clientSocket = serverSocket.accept();
-                PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
-                BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))
-        ) {
+        try  {
+
+            Socket clientSocket = serverSocket.accept();
+            out = new PrintWriter(clientSocket.getOutputStream(), true);
+            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             logger.info("Client connected");
             String clientRequest;
             while ((clientRequest = in.readLine()) != null) {
                 logger.info("Client request: " + clientRequest);
                 String response = handleRequest(clientRequest);
-                out.println(response);
+                sendMessageClient(response);
             }
         } catch (IOException e) {
             logger.error("Error connecting client" + e.getMessage());
@@ -61,11 +65,14 @@ public class Server {
         }
     }
 
+
+
     public String handleRequest(String request) throws JsonProcessingException {
 
         ServerResponse response = new ServerResponse();
         try {
             String serverResponse = switch (request) {
+                case "register" -> handleRegistration();
                 case "uptime" -> response.calculateUptime(startTime);
                 case "help" -> response.printServerCommands(serverData.getCommandInfo());
                 case "info" -> response.printServerInfo(serverData.getServerInfo());
@@ -73,10 +80,29 @@ public class Server {
                 default -> ("{\"info\": \"command unknown\"}");
             };
             return serverResponse;
-        } catch (JsonProcessingException e) {
+        } catch (IOException e) {
             logger.error("Error in generating JSON response");
             return "{\"error\": \"Internal server error\"}";
         }
+    }
+
+
+    private String handleRegistration() throws IOException {
+        ServerResponse response = new ServerResponse();
+        String infoReg = "{\"request\": \"Please provide username and password\"}";
+        sendMessageClient(infoReg);
+
+        String username = in.readLine();
+        String password = in.readLine();
+        String role = in.readLine();
+
+        User registeredUser =  userDataService.addUser(username, password, role);
+
+        return response.registerUser(registeredUser);
+    }
+
+    private void sendMessageClient(String msg) {
+        out.println(msg);
     }
 
     private String stopServer() {
