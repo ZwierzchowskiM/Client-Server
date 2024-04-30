@@ -20,8 +20,9 @@ public class Server {
     private Instant startTime;
     private ServerData serverData;
     private UserDataService userDataService;
-    PrintWriter out ;
-    BufferedReader in ;
+    private PrintWriter out;
+    private BufferedReader in;
+    ServerResponse response = new ServerResponse();
 
     public Server(int port) {
         try {
@@ -46,13 +47,33 @@ public class Server {
         }
     }
 
-    public void start() {
-        try  {
 
-            Socket clientSocket = serverSocket.accept();
-            out = new PrintWriter(clientSocket.getOutputStream(), true);
-            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-            logger.info("Client connected");
+    public void start() {
+        while (true) {
+            try {
+                Socket clientSocket = acceptConnection();
+                handleClient(clientSocket);
+            } catch (IOException e) {
+                logger.error("Error connecting client" + e.getMessage());
+            } finally {
+                closeResources();
+            }
+        }
+    }
+
+    private Socket acceptConnection() throws IOException {
+        logger.info("Waiting for a client...");
+        Socket clientSocket = serverSocket.accept();
+        logger.info("Client connected");
+        return clientSocket;
+    }
+
+    private void handleClient(Socket clientSocket) throws IOException {
+
+        out = new PrintWriter(clientSocket.getOutputStream(), true);
+        in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+
+        try {
             String clientRequest;
             while ((clientRequest = in.readLine()) != null) {
                 logger.info("Client request: " + clientRequest);
@@ -60,16 +81,11 @@ public class Server {
                 sendMessageClient(response);
             }
         } catch (IOException e) {
-            logger.error("Error connecting client" + e.getMessage());
-            throw new RuntimeException(e);
+            logger.error("Error handling client: " + e.getMessage());
         }
     }
 
-
-
     public String handleRequest(String request) throws JsonProcessingException {
-
-        ServerResponse response = new ServerResponse();
         try {
             String serverResponse = switch (request) {
                 case "register" -> handleRegistration();
@@ -86,9 +102,12 @@ public class Server {
         }
     }
 
+    private void sendMessageClient(String msg) {
+        out.println(msg);
+    }
 
     private String handleRegistration() throws IOException {
-        ServerResponse response = new ServerResponse();
+
         String infoReg = "{\"request\": \"Please provide username and password\"}";
         sendMessageClient(infoReg);
 
@@ -96,14 +115,12 @@ public class Server {
         String password = in.readLine();
         String role = in.readLine();
 
-        User registeredUser =  userDataService.addUser(username, password, role);
+        User registeredUser = userDataService.addUser(username, password, role);
 
         return response.registerUser(registeredUser);
     }
 
-    private void sendMessageClient(String msg) {
-        out.println(msg);
-    }
+
 
     private String stopServer() {
         try {
@@ -112,6 +129,19 @@ public class Server {
         } catch (IOException e) {
             logger.error("Error closing server" + e.getMessage());
             throw new RuntimeException(e);
+        }
+    }
+
+    private void closeResources() {
+        try {
+            if (out != null) {
+                out.close();
+            }
+            if (in != null) {
+                in.close();
+            }
+        } catch (IOException e) {
+            logger.error("Failed to close resources: " + e.getMessage());
         }
     }
 }
