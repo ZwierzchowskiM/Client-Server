@@ -23,6 +23,7 @@ public class Server {
     private PrintWriter out;
     private BufferedReader in;
     ServerResponse response = new ServerResponse();
+    Session session = new Session();
 
     public Server(int port) {
         try {
@@ -87,15 +88,16 @@ public class Server {
 
     public String handleRequest(String request) throws JsonProcessingException {
         try {
-            String serverResponse = switch (request) {
+            return switch (request) {
                 case "register" -> handleRegistration();
+                case "login" -> handleUserLogin();
+                case "status" -> response.loggedUser(session.getUser());
                 case "uptime" -> response.calculateUptime(startTime);
                 case "help" -> response.printServerCommands(serverData.getCommandInfo());
                 case "info" -> response.printServerInfo(serverData.getServerInfo());
                 case "stop" -> stopServer();
                 default -> ("{\"info\": \"command unknown\"}");
             };
-            return serverResponse;
         } catch (IOException e) {
             logger.error("Error in generating JSON response");
             return "{\"error\": \"Internal server error\"}";
@@ -108,7 +110,7 @@ public class Server {
 
     private String handleRegistration() throws IOException {
 
-        String infoReg = "{\"request\": \"Please provide username and password\"}";
+        String infoReg = "{\"request\": \"Please provide username, password and user role\"}";
         sendMessageClient(infoReg);
 
         String username = in.readLine();
@@ -119,6 +121,33 @@ public class Server {
 
         return response.registerUser(registeredUser);
     }
+
+    private String handleUserLogin() throws IOException {
+
+        String infoReg = "{\"request\": \"Please provide username and password\"}";
+        sendMessageClient(infoReg);
+
+        String username = in.readLine();
+        String password = in.readLine();
+
+        String infoLog;
+        boolean userRegistred;
+        if (userDataService.isValidCredentials(username, password)) {
+            User user = userDataService.getUser(username);
+            session.setUser(user);
+            userRegistred = true;
+        } else {
+            userRegistred = false;
+        }
+
+        if (userRegistred) {
+            infoLog = "{\"info\": \"User loged in\"}";
+        } else {
+            infoLog = "{\"info\": \"User not logend in\"}";
+        }
+        return infoLog;
+    }
+
 
 
 

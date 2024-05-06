@@ -28,4 +28,5 @@ public abstract class User {
     @Setter(AccessLevel.NONE)
     @JsonProperty("role")
     private String role;
+
 }

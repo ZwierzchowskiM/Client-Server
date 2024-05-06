@@ -32,7 +32,7 @@ public class UserDataService {
         if (file.exists() && file.length() != 0) {
             return mapper.readValue(file, new TypeReference<Map<String,User>>() {});
         } else {
-            return new HashMap<String,User>();
+            return new HashMap<>();
         }
     }
 
@@ -40,5 +40,22 @@ public class UserDataService {
         File file = new File(FILE_PATH);
         mapper.enable(SerializationFeature.INDENT_OUTPUT);
         mapper.writerFor(new TypeReference<Map<String,User>>() { }).writeValue(file, users);
+    }
+
+
+    public boolean isValidCredentials(String username, String password) throws IOException {
+        Map<String, User> users = loadUsers();
+        if (users.containsKey(username)) {
+            User user = users.get(username);
+            return password.equals(user.getPassword());
+        }
+        return false;
+    }
+
+
+    public User getUser(String username) throws IOException {
+        Map<String, User> users = loadUsers();
+        return users.get(username);
+
     }
 }

@@ -54,9 +54,10 @@ public class Client {
 
     public void handleCommand(String command) throws IOException {
         switch (command) {
-            case "register" -> handleRegistration();
-            case "uptime", "info", "help" -> {
-                requestServer("uptime");
+            case "register" -> handleUserRegistration();
+            case "login" -> handleUserLogin();
+            case "uptime", "info", "help", "status" -> {
+                requestServer(command);
                 String response = getServerResponse();
                 handleResponse(response);
             }
@@ -94,10 +95,11 @@ public class Client {
     }
 
     private String printOptions() {
-        return "Choose an option: register,uptime,info,help,stop";
+        return "Choose an option: status,login,register,uptime,info,help,stop";
     }
 
-    private void handleRegistration() throws IOException {
+    private void handleUserRegistration() throws IOException {
+
         requestServer("register");
 
         String response = getServerResponse();
@@ -117,4 +119,25 @@ public class Client {
         String confirmation = in.readLine();
         System.out.println(confirmation);
     }
+
+    private void handleUserLogin() throws IOException {
+
+        requestServer("login");
+
+        String response = getServerResponse();
+        handleResponse(response);
+
+        logger.info("Enter username:");
+        String username = scanner.nextLine();
+        logger.info("Enter password:");
+        String password = scanner.nextLine();
+
+        out.println(username);
+        out.println(password);
+
+        String confirmation = in.readLine();
+        System.out.println(confirmation);
+    }
+
+
 }
