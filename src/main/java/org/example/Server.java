@@ -3,6 +3,8 @@ package org.example;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.modelmapper.ModelMapper;
+import org.modelmapper.record.RecordModule;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -131,25 +133,23 @@ public class Server {
         String password = in.readLine();
 
         String infoLog;
-        boolean userRegistred;
+        boolean userRegistered;
         if (userDataService.isValidCredentials(username, password)) {
             User user = userDataService.getUser(username);
-            session.setUser(user);
-            userRegistred = true;
+            UserDTO userDTO = new UserDTO(user.getUsername(), user.getRole());
+            session.setUser(userDTO);
+            userRegistered = true;
         } else {
-            userRegistred = false;
+            userRegistered = false;
         }
 
-        if (userRegistred) {
-            infoLog = "{\"info\": \"User loged in\"}";
+        if (userRegistered) {
+            infoLog = "{\"info\": \"User successfully logged in\"}";
         } else {
             infoLog = "{\"info\": \"User not logend in\"}";
         }
         return infoLog;
     }
-
-
-
 
     private String stopServer() {
         try {

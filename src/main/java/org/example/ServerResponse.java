@@ -35,10 +35,10 @@ public class ServerResponse {
         return mapper.writeValueAsString(registeredUser);
     }
 
-    public String loggedUser(User user) throws JsonProcessingException {
-        Map<String, User> registeredUser = new HashMap<>();
-        registeredUser.put("Logged user", user);
-        return mapper.writeValueAsString(registeredUser);
+    public String loggedUser(UserDTO user) throws JsonProcessingException {
+        Map<String, UserDTO> loggedUser = new HashMap<>();
+        loggedUser.put("Logged user", user);
+        return mapper.writeValueAsString(loggedUser);
     }
 
 

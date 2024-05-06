@@ -7,6 +7,6 @@ import lombok.Setter;
 @Setter
 public class Session {
 
-    private User user;
+    private UserDTO user;
 
 }
