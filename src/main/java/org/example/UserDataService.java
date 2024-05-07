@@ -27,6 +27,8 @@ public class UserDataService {
         return newUser;
     }
 
+
+
     public Map<String,User> loadUsers() throws IOException {
         File file = new File(FILE_PATH);
         if (file.exists() && file.length() != 0) {
@@ -56,6 +58,19 @@ public class UserDataService {
     public User getUser(String username) throws IOException {
         Map<String, User> users = loadUsers();
         return users.get(username);
+
+    }
+
+    public boolean delete(String username) throws IOException {
+
+        Map<String, User> users = loadUsers();
+        if (users.containsKey(username)){
+            users.remove(username);
+            saveUsers(users);
+            return true;
+        } else {
+            return false;
+        }
 
     }
 }

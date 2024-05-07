@@ -88,13 +88,14 @@ public class Server {
     public String handleRequest(String request) throws JsonProcessingException {
         try {
             return switch (request) {
-                case "register" -> handleRegistration();
+                case "register" -> response.registerUser(handleRegistration());
                 case "login" -> response.printText(handleUserLogin());
                 case "status" -> response.loggedUser(session.getUser());
+                case "delete" -> response.printText(handleUserDelete());
                 case "uptime" -> response.calculateUptime(startTime);
                 case "help" -> response.printServerCommands(serverData.getCommandInfo());
                 case "info" -> response.printServerInfo(serverData.getServerInfo());
-                case "stop" -> stopServer();
+                case "stop" -> response.printText(stopServer());
                 default -> (response.printText("Command unknown"));
             };
         } catch (IOException e) {
@@ -107,10 +108,9 @@ public class Server {
         out.println(msg);
     }
 
-    private String handleRegistration() throws IOException {
+    private User handleRegistration() throws IOException {
 
-        String infoReg = "Please provide username, password and user role";
-        sendMessageClient(response.printText(infoReg));
+        sendMessageClient(response.printText("Please provide username, password and user role"));
 
         String username = in.readLine();
         String password = in.readLine();
@@ -118,13 +118,13 @@ public class Server {
 
         User registeredUser = userDataService.addUser(username, password, role);
 
-        return response.registerUser(registeredUser);
+        return registeredUser;
     }
 
     private String handleUserLogin() throws IOException {
 
-        String infoReg = "{\"request\": \"Please provide username and password\"}";
-        sendMessageClient(response.printText(infoReg));
+
+        sendMessageClient(response.printText("Please provide username and password"));
 
         String username = in.readLine();
         String password = in.readLine();
@@ -143,10 +143,28 @@ public class Server {
         return infoLog;
     }
 
+    private String handleUserDelete() throws IOException {
+
+        sendMessageClient(response.printText("Please provide username"));
+
+        String username = in.readLine();
+
+        String infoLog;
+
+        if (userDataService.delete(username)) {
+            infoLog = "User successfully deleted";
+        } else {
+            infoLog = "Failed to delete user or user does not exist";
+        }
+
+        return infoLog;
+    }
+
+
     private String stopServer() {
         try {
             serverSocket.close();
-            return "{\"info\": \"server stopped\"}";
+            return "Server stopped";
         } catch (IOException e) {
             logger.error("Error closing server" + e.getMessage());
             throw new RuntimeException(e);

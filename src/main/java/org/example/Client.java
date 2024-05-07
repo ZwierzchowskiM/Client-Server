@@ -56,6 +56,7 @@ public class Client {
         switch (command) {
             case "register" -> handleUserRegistration();
             case "login" -> handleUserLogin();
+            case "delete" -> handleUserDelete();
             case "uptime", "info", "help", "status" -> {
                 requestServer(command);
                 String response = getServerResponse();
@@ -102,8 +103,7 @@ public class Client {
 
         requestServer("register");
 
-        String response = getServerResponse();
-        handleResponse(response);
+        handleResponse(getServerResponse());
 
         logger.info("Enter username:");
         String username = scanner.nextLine();
@@ -124,8 +124,7 @@ public class Client {
 
         requestServer("login");
 
-        String response = getServerResponse();
-        handleResponse(response);
+        handleResponse(getServerResponse());
 
         logger.info("Enter username:");
         String username = scanner.nextLine();
@@ -138,6 +137,22 @@ public class Client {
         String confirmation = in.readLine();
         System.out.println(confirmation);
     }
+
+    private void handleUserDelete() throws IOException {
+
+        requestServer("delete");
+
+        handleResponse(getServerResponse());
+
+        logger.info("Enter username:");
+        String username = scanner.nextLine();
+
+        out.println(username);
+
+        String confirmation = in.readLine();
+        System.out.println(confirmation);
+    }
+
 
 
 }
