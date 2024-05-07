@@ -47,6 +47,13 @@ public class ServerResponse {
         return mapper.writeValueAsString(message);
     }
 
+    public String printError(String text) throws JsonProcessingException {
+        Map<String, String> message = new HashMap<>();
+        message.put("error", text);
+        return mapper.writeValueAsString(message);
+    }
+
+
 
 
 }

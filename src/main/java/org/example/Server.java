@@ -12,7 +12,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.time.Instant;
 
-
 public class Server {
 
     private static Logger logger = LogManager.getLogger(Server.class);
@@ -24,7 +23,6 @@ public class Server {
     private BufferedReader in;
     Session session = new Session();
     ServerResponse response = new ServerResponse();
-    CredentialsValidator credentialsValidator = new CredentialsValidator();
 
     public Server(int port) {
         try {
@@ -101,10 +99,10 @@ public class Server {
             };
         } catch (IOException e) {
             logger.error("Error in generating JSON response");
-            return "{\"error\": \"Internal server error\"}";
+            return response.printError(e.getMessage());
         } catch (IllegalArgumentException e) {
             logger.error(e.getMessage());
-            return "{\"error\": \"Invalid username or password format\"}";
+            return response.printError(e.getMessage());
         }
     }
 
@@ -120,16 +118,14 @@ public class Server {
         String password = in.readLine();
         String role = in.readLine();
 
-        if (!credentialsValidator.validateUsername(username)) {
+        if (!CredentialsValidator.validateUsername(username)) {
             throw new IllegalArgumentException("Invalid username format");
         }
-        if (!credentialsValidator.validatePassword(password)) {
+        if (!CredentialsValidator.validatePassword(password)) {
             throw new IllegalArgumentException("Invalid password format");
         }
 
-        User registeredUser = userDataService.addUser(username, password, role);
-
-        return registeredUser;
+        return userDataService.addUser(username, password, role);
     }
 
     private String handleUserLogin() throws IOException {
@@ -140,10 +136,10 @@ public class Server {
         String username = in.readLine();
         String password = in.readLine();
 
-        if (!credentialsValidator.validateUsername(username)) {
+        if (!CredentialsValidator.validateUsername(username)) {
             throw new IllegalArgumentException("Invalid username format");
         }
-        if (!credentialsValidator.validatePassword(password)) {
+        if (!CredentialsValidator.validatePassword(password)) {
             throw new IllegalArgumentException("Invalid password format");
         }
 
