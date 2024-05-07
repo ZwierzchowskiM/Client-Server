@@ -24,6 +24,7 @@ public class Server {
     private BufferedReader in;
     Session session = new Session();
     ServerResponse response = new ServerResponse();
+    CredentialsValidator credentialsValidator = new CredentialsValidator();
 
     public Server(int port) {
         try {
@@ -96,11 +97,14 @@ public class Server {
                 case "help" -> response.printServerCommands(serverData.getCommandInfo());
                 case "info" -> response.printServerInfo(serverData.getServerInfo());
                 case "stop" -> response.printText(stopServer());
-                default -> (response.printText("Command unknown"));
+                default -> response.printText("Command unknown");
             };
         } catch (IOException e) {
             logger.error("Error in generating JSON response");
             return "{\"error\": \"Internal server error\"}";
+        } catch (IllegalArgumentException e) {
+            logger.error(e.getMessage());
+            return "{\"error\": \"Invalid username or password format\"}";
         }
     }
 
@@ -116,6 +120,13 @@ public class Server {
         String password = in.readLine();
         String role = in.readLine();
 
+        if (!credentialsValidator.validateUsername(username)) {
+            throw new IllegalArgumentException("Invalid username format");
+        }
+        if (!credentialsValidator.validatePassword(password)) {
+            throw new IllegalArgumentException("Invalid password format");
+        }
+
         User registeredUser = userDataService.addUser(username, password, role);
 
         return registeredUser;
@@ -128,6 +139,13 @@ public class Server {
 
         String username = in.readLine();
         String password = in.readLine();
+
+        if (!credentialsValidator.validateUsername(username)) {
+            throw new IllegalArgumentException("Invalid username format");
+        }
+        if (!credentialsValidator.validatePassword(password)) {
+            throw new IllegalArgumentException("Invalid password format");
+        }
 
         String infoLog;
         if (userDataService.isValidCredentials(username, password)) {
