@@ -3,8 +3,6 @@ package org.example;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.modelmapper.ModelMapper;
-import org.modelmapper.record.RecordModule;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -24,8 +22,8 @@ public class Server {
     private UserDataService userDataService;
     private PrintWriter out;
     private BufferedReader in;
-    ServerResponse response = new ServerResponse();
     Session session = new Session();
+    ServerResponse response = new ServerResponse();
 
     public Server(int port) {
         try {
@@ -49,7 +47,6 @@ public class Server {
             logger.error("starting connection");
         }
     }
-
 
     public void start() {
         while (true) {
@@ -92,13 +89,13 @@ public class Server {
         try {
             return switch (request) {
                 case "register" -> handleRegistration();
-                case "login" -> handleUserLogin();
+                case "login" -> response.printText(handleUserLogin());
                 case "status" -> response.loggedUser(session.getUser());
                 case "uptime" -> response.calculateUptime(startTime);
                 case "help" -> response.printServerCommands(serverData.getCommandInfo());
                 case "info" -> response.printServerInfo(serverData.getServerInfo());
                 case "stop" -> stopServer();
-                default -> ("{\"info\": \"command unknown\"}");
+                default -> (response.printText("Command unknown"));
             };
         } catch (IOException e) {
             logger.error("Error in generating JSON response");
@@ -112,8 +109,8 @@ public class Server {
 
     private String handleRegistration() throws IOException {
 
-        String infoReg = "{\"request\": \"Please provide username, password and user role\"}";
-        sendMessageClient(infoReg);
+        String infoReg = "Please provide username, password and user role";
+        sendMessageClient(response.printText(infoReg));
 
         String username = in.readLine();
         String password = in.readLine();
@@ -127,27 +124,22 @@ public class Server {
     private String handleUserLogin() throws IOException {
 
         String infoReg = "{\"request\": \"Please provide username and password\"}";
-        sendMessageClient(infoReg);
+        sendMessageClient(response.printText(infoReg));
 
         String username = in.readLine();
         String password = in.readLine();
 
         String infoLog;
-        boolean userRegistered;
         if (userDataService.isValidCredentials(username, password)) {
             User user = userDataService.getUser(username);
             UserDTO userDTO = new UserDTO(user.getUsername(), user.getRole());
             session.setUser(userDTO);
-            userRegistered = true;
+            infoLog = "User successfully logged in";
+
         } else {
-            userRegistered = false;
+            infoLog = "User not logged in";
         }
 
-        if (userRegistered) {
-            infoLog = "{\"info\": \"User successfully logged in\"}";
-        } else {
-            infoLog = "{\"info\": \"User not logend in\"}";
-        }
         return infoLog;
     }
 
