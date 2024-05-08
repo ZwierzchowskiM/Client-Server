@@ -1,4 +1,4 @@
-package org.example;
+package org.example.user;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -9,7 +9,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @JsonTypeName("admin")
-public class Admin extends User{
+public class Admin extends User {
     @JsonCreator
     public Admin(@JsonProperty("username") String username,
                  @JsonProperty("password")String password) {

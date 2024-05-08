@@ -1,7 +1,9 @@
-package org.example;
+package org.example.server;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.example.user.User;
+import org.example.user.UserDTO;
 
 import java.time.Duration;
 import java.time.Instant;

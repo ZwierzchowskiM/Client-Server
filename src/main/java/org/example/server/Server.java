@@ -1,8 +1,12 @@
-package org.example;
+package org.example.server;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.example.user.User;
+import org.example.user.UserDTO;
+import org.example.user.UserDataService;
+import org.example.utils.CredentialsValidator;
 
 import java.io.BufferedReader;
 import java.io.IOException;
