@@ -17,56 +17,67 @@ public class Client {
     private static final Logger logger = LogManager.getLogger(Client.class);
     private static final Scanner scanner = new Scanner(System.in);
     private static final ObjectMapper mapper = new ObjectMapper();
-    private static final String CLIENT_IP = "127.0.0.1";
-    private static final int CLIENT_PORT = 6666;
+    static final String CLIENT_IP = "127.0.0.1";
+    static final int CLIENT_PORT = 6666;
+    private PrintWriter out;
+    private BufferedReader in;
+    private Socket socket;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
 
         Client client = new Client();
+        client.connectToServer(CLIENT_IP, CLIENT_PORT);
+        client.communicateServer();
+    }
+
+    private void connectToServer(String ip, int port) {
         try {
-            client.start(CLIENT_IP, CLIENT_PORT);
-        } catch (RuntimeException e) {
+            socket = new Socket(ip, port);
+        } catch (IOException e) {
             logger.error("connection error" + e.getMessage());
         }
+        logger.info("Connected to server at " + ip + ":" + port);
     }
 
-    public void start(String ip, int port) {
-        try (
-                Socket clientSocket = new Socket(ip, port);
-                PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
-                BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))
-        ) {
-            logger.info("Client connected to server");
+    private void communicateServer() throws IOException {
 
-            String input;
-            while (!clientSocket.isClosed()) {
-                logger.info(printOptions());
-                input = scanner.nextLine();
-                switch (input) {
-                    case "uptime", "info", "help" -> messageServer(out, in, input);
-                    case "stop" -> {
-                        messageServer(out, in, "stop");
-                        stopConnection();
-                        return;
-                    }
-                    default -> logger.info("request unknown");
-                }
+        out = new PrintWriter(socket.getOutputStream(), true);
+        in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+        String input;
+        while (!socket.isClosed()) {
+            logger.info(printOptions());
+            input = scanner.nextLine();
+            handleCommand(input);
+        }
+    }
+
+    public void handleCommand(String command) throws IOException {
+        switch (command) {
+            case "register" -> handleUserRegistration();
+            case "login" -> handleUserLogin();
+            case "delete" -> handleUserDelete();
+            case "uptime", "info", "help", "status" -> {
+                requestServer(command);
+                String response = getServerResponse();
+                handleResponse(response);
             }
-        } catch (IOException e) {
-            logger.error("Error connecting to server: " + e.getMessage());
-            throw new RuntimeException(e);
+            case "stop" -> {
+                requestServer("stop");
+                String response = getServerResponse();
+                handleResponse(response);
+                stopConnection();
+            }
+            default -> logger.info("Request unknown");
         }
     }
 
-    private void messageServer(PrintWriter out, BufferedReader in, String msg) {
-        out.println(msg);
-        try {
-            String resp = in.readLine();
-            handleResponse(resp);
-        } catch (IOException e) {
-            logger.error("Error reading message from server: " + e.getMessage());
-            throw new RuntimeException(e);
-        }
+    private void requestServer(String message) {
+        out.println(message);
+    }
+
+    private String getServerResponse() throws IOException {
+        return in.readLine();
     }
 
     public void handleResponse(String jsonResp) {
@@ -75,15 +86,73 @@ public class Client {
             String prettyString = rootNode.toPrettyString();
             logger.info(prettyString);
         } catch (IOException e) {
-            System.out.println("Error processing JSON response: " + e.getMessage());
+            logger.error("Error processing JSON response: " + e.getMessage());
         }
     }
 
-    public void stopConnection() {
-        logger.info("connection stopped");
+    public void stopConnection() throws IOException {
+        socket.close();
+        logger.info("Disconnected from server");
     }
 
     private String printOptions() {
-        return "Choose an option: uptime,info,help,stop";
+        return "Choose an option: status,login,register,uptime,info,help,stop";
     }
+
+    private void handleUserRegistration() throws IOException {
+
+        requestServer("register");
+
+        handleResponse(getServerResponse());
+
+        logger.info("Enter username:");
+        String username = scanner.nextLine();
+        logger.info("Enter password:");
+        String password = scanner.nextLine();
+        logger.info("Enter role:");
+        String role = scanner.nextLine();
+
+        out.println(username);
+        out.println(password);
+        out.println(role);
+
+        String confirmation = in.readLine();
+        System.out.println(confirmation);
+    }
+
+    private void handleUserLogin() throws IOException {
+
+        requestServer("login");
+
+        handleResponse(getServerResponse());
+
+        logger.info("Enter username:");
+        String username = scanner.nextLine();
+        logger.info("Enter password:");
+        String password = scanner.nextLine();
+
+        out.println(username);
+        out.println(password);
+
+        String confirmation = in.readLine();
+        System.out.println(confirmation);
+    }
+
+    private void handleUserDelete() throws IOException {
+
+        requestServer("delete");
+
+        handleResponse(getServerResponse());
+
+        logger.info("Enter username:");
+        String username = scanner.nextLine();
+
+        out.println(username);
+
+        String confirmation = in.readLine();
+        System.out.println(confirmation);
+    }
+
+
+
 }

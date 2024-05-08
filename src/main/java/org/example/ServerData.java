@@ -19,6 +19,7 @@ public class ServerData {
         commandsInfo.put("info", "Returns the server's version number and creation date");
         commandsInfo.put("help", "Returns a list of available commands with a brief description");
         commandsInfo.put("stop", "stops both the server and the client simultaneously");
+        commandsInfo.put("addUser", "Add new user");
 
         severInfo.put("version", SERVER_VERSION);
         severInfo.put("creation date", SERVER_CREATION_DATE);

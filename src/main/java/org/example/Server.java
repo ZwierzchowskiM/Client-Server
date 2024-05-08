@@ -12,13 +12,17 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.time.Instant;
 
-
 public class Server {
 
     private static Logger logger = LogManager.getLogger(Server.class);
     private ServerSocket serverSocket;
     private Instant startTime;
     private ServerData serverData;
+    private UserDataService userDataService;
+    private PrintWriter out;
+    private BufferedReader in;
+    Session session = new Session();
+    ServerResponse response = new ServerResponse();
 
     public Server(int port) {
         try {
@@ -28,6 +32,7 @@ public class Server {
             throw new RuntimeException(e);
         }
         serverData = new ServerData();
+        userDataService = new UserDataService();
         startTime = Instant.now();
         logger.info("Server started on port " + port);
     }
@@ -38,54 +43,152 @@ public class Server {
         try {
             server.start();
         } catch (RuntimeException e) {
-            logger.error("starting connection");
+            logger.error("Starting connection");
         }
     }
 
     public void start() {
-        try (
-                Socket clientSocket = serverSocket.accept();
-                PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
-                BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))
-        ) {
-            logger.info("Client connected");
+        while (true) {
+            try {
+                Socket clientSocket = acceptConnection();
+                handleClient(clientSocket);
+            } catch (IOException e) {
+                logger.error("Error connecting client" + e.getMessage());
+            } finally {
+                closeResources();
+            }
+        }
+    }
+
+    private Socket acceptConnection() throws IOException {
+        logger.info("Waiting for a client...");
+        Socket clientSocket = serverSocket.accept();
+        logger.info("Client connected");
+        return clientSocket;
+    }
+
+    private void handleClient(Socket clientSocket) throws IOException {
+
+        out = new PrintWriter(clientSocket.getOutputStream(), true);
+        in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+
+        try {
             String clientRequest;
             while ((clientRequest = in.readLine()) != null) {
                 logger.info("Client request: " + clientRequest);
                 String response = handleRequest(clientRequest);
-                out.println(response);
+                sendMessageClient(response);
             }
         } catch (IOException e) {
-            logger.error("Error connecting client" + e.getMessage());
-            throw new RuntimeException(e);
+            logger.error("Error handling client: " + e.getMessage());
         }
     }
 
     public String handleRequest(String request) throws JsonProcessingException {
-
-        ServerResponse response = new ServerResponse();
         try {
-            String serverResponse = switch (request) {
+            return switch (request) {
+                case "register" -> response.registerUser(handleRegistration());
+                case "login" -> response.printText(handleUserLogin());
+                case "status" -> response.loggedUser(session.getUser());
+                case "delete" -> response.printText(handleUserDelete());
                 case "uptime" -> response.calculateUptime(startTime);
                 case "help" -> response.printServerCommands(serverData.getCommandInfo());
                 case "info" -> response.printServerInfo(serverData.getServerInfo());
-                case "stop" -> stopServer();
-                default -> ("{\"info\": \"command unknown\"}");
+                case "stop" -> response.printText(stopServer());
+                default -> response.printText("Command unknown");
             };
-            return serverResponse;
-        } catch (JsonProcessingException e) {
+        } catch (IOException e) {
             logger.error("Error in generating JSON response");
-            return "{\"error\": \"Internal server error\"}";
+            return response.printError(e.getMessage());
+        } catch (IllegalArgumentException e) {
+            logger.error(e.getMessage());
+            return response.printError(e.getMessage());
         }
     }
 
-    private String stopServer() {
-        try {
-            serverSocket.close();
-            return "{\"info\": \"server stopped\"}";
-        } catch (IOException e) {
-            logger.error("Error closing server" + e.getMessage());
-            throw new RuntimeException(e);
-        }
+    private void sendMessageClient(String msg) {
+        out.println(msg);
     }
+
+    private User handleRegistration() throws IOException, IllegalArgumentException {
+
+        sendMessageClient(response.printText("Please provide username, password and user role"));
+
+        String username = in.readLine();
+        String password = in.readLine();
+        String role = in.readLine();
+
+        CredentialsValidator.validateUsername(username);
+        CredentialsValidator.validatePassword(password);
+        CredentialsValidator.validateRole(role);
+
+        return userDataService.addUser(username, password, role);
+    }
+
+
+private String handleUserLogin() throws IOException, IllegalArgumentException {
+
+
+    sendMessageClient(response.printText("Please provide username and password"));
+
+    String username = in.readLine();
+    String password = in.readLine();
+
+    CredentialsValidator.validateUsername(username);
+    CredentialsValidator.validatePassword(password);
+
+    String infoLog;
+    if (userDataService.isValidCredentials(username, password)) {
+        User user = userDataService.getUser(username);
+        UserDTO userDTO = new UserDTO(user.getUsername(), user.getRole());
+        session.setUser(userDTO);
+        infoLog = "User successfully logged in";
+
+    } else {
+        infoLog = "User not logged in";
+    }
+
+    return infoLog;
+}
+
+private String handleUserDelete() throws IOException {
+
+    sendMessageClient(response.printText("Please provide username"));
+
+    String username = in.readLine();
+
+    String infoLog;
+
+    if (userDataService.delete(username)) {
+        infoLog = "User successfully deleted";
+    } else {
+        infoLog = "Failed to delete user or user does not exist";
+    }
+
+    return infoLog;
+}
+
+
+private String stopServer() {
+    try {
+        serverSocket.close();
+        return "Server stopped";
+    } catch (IOException e) {
+        logger.error("Error closing server: {}", e.getMessage());
+        throw new RuntimeException(e);
+    }
+}
+
+private void closeResources() {
+    try {
+        if (out != null) {
+            out.close();
+        }
+        if (in != null) {
+            in.close();
+        }
+    } catch (IOException e) {
+        logger.error("Failed to close resources: {}", e.getMessage());
+    }
+}
 }

@@ -29,4 +29,31 @@ public class ServerResponse {
         return mapper.writeValueAsString(serverInfo);
     }
 
+    public String registerUser(User user) throws JsonProcessingException {
+        Map<String, User> registeredUser = new HashMap<>();
+        registeredUser.put("Registered user", user);
+        return mapper.writeValueAsString(registeredUser);
+    }
+
+    public String loggedUser(UserDTO user) throws JsonProcessingException {
+        Map<String, UserDTO> loggedUser = new HashMap<>();
+        loggedUser.put("Logged user", user);
+        return mapper.writeValueAsString(loggedUser);
+    }
+
+    public String printText(String text) throws JsonProcessingException {
+        Map<String, String> message = new HashMap<>();
+        message.put("info", text);
+        return mapper.writeValueAsString(message);
+    }
+
+    public String printError(String text) throws JsonProcessingException {
+        Map<String, String> message = new HashMap<>();
+        message.put("error", text);
+        return mapper.writeValueAsString(message);
+    }
+
+
+
+
 }
