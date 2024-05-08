@@ -43,7 +43,7 @@ public class Server {
         try {
             server.start();
         } catch (RuntimeException e) {
-            logger.error("starting connection");
+            logger.error("Starting connection");
         }
     }
 
@@ -110,7 +110,7 @@ public class Server {
         out.println(msg);
     }
 
-    private User handleRegistration() throws IOException {
+    private User handleRegistration() throws IOException, IllegalArgumentException {
 
         sendMessageClient(response.printText("Please provide username, password and user role"));
 
@@ -118,83 +118,77 @@ public class Server {
         String password = in.readLine();
         String role = in.readLine();
 
-        if (!CredentialsValidator.validateUsername(username)) {
-            throw new IllegalArgumentException("Invalid username format");
-        }
-        if (!CredentialsValidator.validatePassword(password)) {
-            throw new IllegalArgumentException("Invalid password format");
-        }
+        CredentialsValidator.validateUsername(username);
+        CredentialsValidator.validatePassword(password);
+        CredentialsValidator.validateRole(role);
 
         return userDataService.addUser(username, password, role);
     }
 
-    private String handleUserLogin() throws IOException {
+
+private String handleUserLogin() throws IOException, IllegalArgumentException {
 
 
-        sendMessageClient(response.printText("Please provide username and password"));
+    sendMessageClient(response.printText("Please provide username and password"));
 
-        String username = in.readLine();
-        String password = in.readLine();
+    String username = in.readLine();
+    String password = in.readLine();
 
-        if (!CredentialsValidator.validateUsername(username)) {
-            throw new IllegalArgumentException("Invalid username format");
-        }
-        if (!CredentialsValidator.validatePassword(password)) {
-            throw new IllegalArgumentException("Invalid password format");
-        }
+    CredentialsValidator.validateUsername(username);
+    CredentialsValidator.validatePassword(password);
 
-        String infoLog;
-        if (userDataService.isValidCredentials(username, password)) {
-            User user = userDataService.getUser(username);
-            UserDTO userDTO = new UserDTO(user.getUsername(), user.getRole());
-            session.setUser(userDTO);
-            infoLog = "User successfully logged in";
+    String infoLog;
+    if (userDataService.isValidCredentials(username, password)) {
+        User user = userDataService.getUser(username);
+        UserDTO userDTO = new UserDTO(user.getUsername(), user.getRole());
+        session.setUser(userDTO);
+        infoLog = "User successfully logged in";
 
-        } else {
-            infoLog = "User not logged in";
-        }
-
-        return infoLog;
+    } else {
+        infoLog = "User not logged in";
     }
 
-    private String handleUserDelete() throws IOException {
+    return infoLog;
+}
 
-        sendMessageClient(response.printText("Please provide username"));
+private String handleUserDelete() throws IOException {
 
-        String username = in.readLine();
+    sendMessageClient(response.printText("Please provide username"));
 
-        String infoLog;
+    String username = in.readLine();
 
-        if (userDataService.delete(username)) {
-            infoLog = "User successfully deleted";
-        } else {
-            infoLog = "Failed to delete user or user does not exist";
-        }
+    String infoLog;
 
-        return infoLog;
+    if (userDataService.delete(username)) {
+        infoLog = "User successfully deleted";
+    } else {
+        infoLog = "Failed to delete user or user does not exist";
     }
 
+    return infoLog;
+}
 
-    private String stopServer() {
-        try {
-            serverSocket.close();
-            return "Server stopped";
-        } catch (IOException e) {
-            logger.error("Error closing server" + e.getMessage());
-            throw new RuntimeException(e);
-        }
-    }
 
-    private void closeResources() {
-        try {
-            if (out != null) {
-                out.close();
-            }
-            if (in != null) {
-                in.close();
-            }
-        } catch (IOException e) {
-            logger.error("Failed to close resources: " + e.getMessage());
-        }
+private String stopServer() {
+    try {
+        serverSocket.close();
+        return "Server stopped";
+    } catch (IOException e) {
+        logger.error("Error closing server: {}", e.getMessage());
+        throw new RuntimeException(e);
     }
+}
+
+private void closeResources() {
+    try {
+        if (out != null) {
+            out.close();
+        }
+        if (in != null) {
+            in.close();
+        }
+    } catch (IOException e) {
+        logger.error("Failed to close resources: {}", e.getMessage());
+    }
+}
 }

@@ -17,7 +17,7 @@ public class UserDataService {
     public User addUser(String username, String password, String role) throws IOException {
         Map<String, User> users = loadUsers();
         User newUser = switch (role) {
-            case "normal" -> new NormalUser(username, password);
+            case "standard" -> new StandardUser(username, password);
             case "admin" -> new Admin(username, password);
             default -> throw new IllegalStateException("Unexpected value: " + role);
         };

@@ -9,12 +9,12 @@ import lombok.Setter;
 @Getter
 @Setter
 @JsonTypeName("normal")
-public class NormalUser extends User {
+public class StandardUser extends User {
 
     @JsonCreator
-    public NormalUser(@JsonProperty("username") String username,
-                      @JsonProperty("password")String password) {
-        super(username, password, "normal");
+    public StandardUser(@JsonProperty("username") String username,
+                        @JsonProperty("password")String password) {
+        super(username, password, "standard");
     }
 
 }
