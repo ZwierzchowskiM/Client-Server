@@ -37,7 +37,7 @@ public class ServerResponse {
         return mapper.writeValueAsString(registeredUser);
     }
 
-    public String loggedUser(UserDTO user) throws JsonProcessingException {
+    public String currentLoggedUser(UserDTO user) throws JsonProcessingException {
         Map<String, UserDTO> loggedUser = new HashMap<>();
         loggedUser.put("Logged user", user);
         return mapper.writeValueAsString(loggedUser);
@@ -49,13 +49,25 @@ public class ServerResponse {
         return mapper.writeValueAsString(message);
     }
 
+
     public String printError(String text) throws JsonProcessingException {
         Map<String, String> message = new HashMap<>();
         message.put("error", text);
         return mapper.writeValueAsString(message);
     }
 
+    public String printLoginStatus(boolean status) throws JsonProcessingException {
+        Map<String, String> response = new HashMap<>();
+        if (status) {
+            response.put("status", "success");
+            response.put("message", "User sucessfully logged in");
+        } else {
+            response.put("status", "failure");
+            response.put("message", "Incorrect username or password");
+        }
 
+        return mapper.writeValueAsString(response);
+    }
 
 
 }

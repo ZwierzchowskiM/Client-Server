@@ -92,8 +92,9 @@ public class Server {
         try {
             return switch (request) {
                 case "register" -> response.registerUser(handleRegistration());
-                case "login" -> response.printText(handleUserLogin());
-                case "status" -> response.loggedUser(session.getUser());
+                case "login" -> response.printLoginStatus(handleUserLogin());
+                case "logout" -> response.printText(handleUserLogout());
+                case "status" -> response.currentLoggedUser(session.getUser());
                 case "delete" -> response.printText(handleUserDelete());
                 case "uptime" -> response.calculateUptime(startTime);
                 case "help" -> response.printServerCommands(serverData.getCommandInfo());
@@ -110,9 +111,6 @@ public class Server {
         }
     }
 
-    private void sendMessageClient(String msg) {
-        out.println(msg);
-    }
 
     private User handleRegistration() throws IOException, IllegalArgumentException {
 
@@ -130,69 +128,76 @@ public class Server {
     }
 
 
-private String handleUserLogin() throws IOException, IllegalArgumentException {
+    private boolean handleUserLogin() throws IOException, IllegalArgumentException {
 
+        sendMessageClient(response.printText("Please provide username and password"));
 
-    sendMessageClient(response.printText("Please provide username and password"));
+        String username = in.readLine();
+        String password = in.readLine();
 
-    String username = in.readLine();
-    String password = in.readLine();
+        CredentialsValidator.validateUsername(username);
+        CredentialsValidator.validatePassword(password);
 
-    CredentialsValidator.validateUsername(username);
-    CredentialsValidator.validatePassword(password);
-
-    String infoLog;
-    if (userDataService.isValidCredentials(username, password)) {
-        User user = userDataService.getUser(username);
-        UserDTO userDTO = new UserDTO(user.getUsername(), user.getRole());
-        session.setUser(userDTO);
-        infoLog = "User successfully logged in";
-
-    } else {
-        infoLog = "User not logged in";
-    }
-
-    return infoLog;
-}
-
-private String handleUserDelete() throws IOException {
-
-    sendMessageClient(response.printText("Please provide username"));
-
-    String username = in.readLine();
-
-    String infoLog;
-
-    if (userDataService.delete(username)) {
-        infoLog = "User successfully deleted";
-    } else {
-        infoLog = "Failed to delete user or user does not exist";
-    }
-
-    return infoLog;
-}
-
-
-private String stopServer() {
-    try {
-        serverSocket.close();
-        return "Server stopped";
-    } catch (IOException e) {
-        logger.error("Error closing server: {}", e.getMessage());
-        throw new RuntimeException(e);
-    }
-}
-
-private void closeResources() {
-    try {
-        if (out != null) {
-            out.close();
+        boolean loginSuccessful;
+        if (userDataService.isValidCredentials(username, password)) {
+            User user = userDataService.getUser(username);
+            UserDTO userDTO = new UserDTO(user.getUsername(), user.getRole());
+            session.setUser(userDTO);
+            loginSuccessful = true;
+        } else {
+            loginSuccessful = false;
         }
-        if (in != null) {
-            in.close();
-        }
-    } catch (IOException e) {
-        logger.error("Failed to close resources: {}", e.getMessage());
+        return loginSuccessful;
     }
-}
+
+    private String handleUserLogout() throws IOException, IllegalArgumentException {
+
+        session.setUser(null);
+
+        return "Logout successful";
+    }
+
+    private String handleUserDelete() throws IOException {
+
+        sendMessageClient(response.printText("Please provide username"));
+
+        String username = in.readLine();
+
+        String infoLog;
+
+        if (userDataService.delete(username)) {
+            infoLog = "User successfully deleted";
+        } else {
+            infoLog = "Failed to delete user or user does not exist";
+        }
+
+        return infoLog;
+    }
+
+    private void sendMessageClient(String msg) {
+        out.println(msg);
+    }
+
+    private String stopServer() {
+        try {
+            serverSocket.close();
+            return "Server stopped";
+        } catch (IOException e) {
+            logger.error("Error closing server: {}", e.getMessage());
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void closeResources() {
+        try {
+            if (out != null) {
+                out.close();
+            }
+            if (in != null) {
+                in.close();
+            }
+        } catch (IOException e) {
+            logger.error("Failed to close resources: {}", e.getMessage());
+        }
+    }
 }

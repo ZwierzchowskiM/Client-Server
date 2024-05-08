@@ -31,4 +31,5 @@ public abstract class User {
     @JsonProperty("role")
     private String role;
 
+
 }

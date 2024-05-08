@@ -22,6 +22,7 @@ public class Client {
     private PrintWriter out;
     private BufferedReader in;
     private Socket socket;
+    private boolean isUserLoggedIn = false;
 
     public static void main(String[] args) throws IOException {
 
@@ -34,9 +35,9 @@ public class Client {
         try {
             socket = new Socket(ip, port);
         } catch (IOException e) {
-            logger.error("connection error" + e.getMessage());
+            logger.error("connection error {}", e.getMessage());
         }
-        logger.info("Connected to server at " + ip + ":" + port);
+        logger.info("Connected to server at {} : {}", ip, port);
     }
 
     private void communicateServer() throws IOException {
@@ -56,54 +57,38 @@ public class Client {
         switch (command) {
             case "register" -> handleUserRegistration();
             case "login" -> handleUserLogin();
+            case "logout" -> handleUserLogout();
             case "delete" -> handleUserDelete();
             case "uptime", "info", "help", "status" -> {
                 requestServer(command);
                 String response = getServerResponse();
-                handleResponse(response);
+                printServerResponse(response);
             }
             case "stop" -> {
                 requestServer("stop");
                 String response = getServerResponse();
-                handleResponse(response);
+                printServerResponse(response);
                 stopConnection();
             }
             default -> logger.info("Request unknown");
         }
     }
 
-    private void requestServer(String message) {
-        out.println(message);
-    }
-
-    private String getServerResponse() throws IOException {
-        return in.readLine();
-    }
-
-    public void handleResponse(String jsonResp) {
+    public void printServerResponse(String jsonResp) {
         try {
             JsonNode rootNode = mapper.readTree(jsonResp);
             String prettyString = rootNode.toPrettyString();
             logger.info(prettyString);
         } catch (IOException e) {
-            logger.error("Error processing JSON response: " + e.getMessage());
+            logger.error("Error processing JSON response: {}", e.getMessage());
         }
-    }
-
-    public void stopConnection() throws IOException {
-        socket.close();
-        logger.info("Disconnected from server");
-    }
-
-    private String printOptions() {
-        return "Choose an option: status,login,register,uptime,info,help,stop";
     }
 
     private void handleUserRegistration() throws IOException {
 
         requestServer("register");
 
-        handleResponse(getServerResponse());
+        printServerResponse(getServerResponse());
 
         logger.info("Enter username:");
         String username = scanner.nextLine();
@@ -122,27 +107,55 @@ public class Client {
 
     private void handleUserLogin() throws IOException {
 
-        requestServer("login");
+        if (!isUserLoggedIn) {
+            requestServer("login");
 
-        handleResponse(getServerResponse());
+            printServerResponse(getServerResponse());
 
-        logger.info("Enter username:");
-        String username = scanner.nextLine();
-        logger.info("Enter password:");
-        String password = scanner.nextLine();
+            logger.info("Enter username:");
+            String username = scanner.nextLine();
+            logger.info("Enter password:");
+            String password = scanner.nextLine();
 
-        out.println(username);
-        out.println(password);
+            out.println(username);
+            out.println(password);
 
-        String confirmation = in.readLine();
-        System.out.println(confirmation);
+            String loginResponse = in.readLine();
+            printServerResponse(loginResponse);
+
+            handleLoginResponse(loginResponse);
+        } else {
+            logger.info("User already logged in");
+        }
+    }
+
+    private void handleUserLogout() throws IOException {
+
+        if (isUserLoggedIn) {
+            requestServer("logout");
+            printServerResponse(getServerResponse());
+            isUserLoggedIn = false;
+        } else {
+            logger.info("User already not logged in");
+        }
+    }
+
+    private void handleLoginResponse(String loginResponse) {
+        try {
+            JsonNode responseNode = mapper.readTree(loginResponse);
+            String status = responseNode.get("status").asText();
+
+            isUserLoggedIn = "success".equals(status);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void handleUserDelete() throws IOException {
 
         requestServer("delete");
 
-        handleResponse(getServerResponse());
+        printServerResponse(getServerResponse());
 
         logger.info("Enter username:");
         String username = scanner.nextLine();
@@ -153,6 +166,24 @@ public class Client {
         System.out.println(confirmation);
     }
 
+    public boolean isLoggedIn() {
+        return isUserLoggedIn;
+    }
 
+    private void requestServer(String message) {
+        out.println(message);
+    }
 
+    private String getServerResponse() throws IOException {
+        return in.readLine();
+    }
+
+    public void stopConnection() throws IOException {
+        socket.close();
+        logger.info("Disconnected from server");
+    }
+
+    private String printOptions() {
+        return "Choose an option: status,login,register,uptime,info,help,stop";
+    }
 }
