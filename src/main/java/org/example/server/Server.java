@@ -3,18 +3,13 @@ package org.example.server;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.example.client.ClientNetworkHandler;
 import org.example.user.User;
 import org.example.user.UserDTO;
 import org.example.user.UserDataService;
 import org.example.utils.CredentialsValidator;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.ServerSocket;
-import java.net.Socket;
 import java.time.Instant;
 
 public class Server {
@@ -53,14 +48,14 @@ public class Server {
     }
 
     public void start() {
-        while (true) {
+
             try {
                 serverNetworkHandler.acceptConnection();
                 handleClient();
             } catch (IOException e) {
-                logger.error("Error connecting client" + e.getMessage());
+                logger.error("Error connecting client {}", e.getMessage());
             }
-        }
+
     }
 
 
@@ -162,11 +157,8 @@ public class Server {
         return infoLog;
     }
 
-
     private String stopServer() {
-        serverNetworkHandler.close();
-        return "Server stopped";
+            serverNetworkHandler.close();
+            return "Server stopped";
     }
-
-
 }

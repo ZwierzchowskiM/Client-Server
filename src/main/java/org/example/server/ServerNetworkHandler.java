@@ -42,17 +42,22 @@ public class ServerNetworkHandler {
 
     public void close() {
         try {
+            serverSocket.close();
+        } catch (IOException e) {
+            logger.error("Error closing resources: {}", e.getMessage());
+        }
+    }
+
+    private void closeResources() {
+        try {
             if (out != null) {
                 out.close();
             }
             if (in != null) {
                 in.close();
             }
-            if (clientSocket != null) {
-                clientSocket.close();
-            }
         } catch (IOException e) {
-            logger.error("Error closing resources: {}", e.getMessage());
+            logger.error("Failed to close resources: {}", e.getMessage());
         }
     }
 }
