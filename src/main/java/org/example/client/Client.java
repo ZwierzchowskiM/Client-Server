@@ -4,11 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Scanner;
 
@@ -19,35 +15,22 @@ public class Client {
     private static final ObjectMapper mapper = new ObjectMapper();
     static final String CLIENT_IP = "127.0.0.1";
     static final int CLIENT_PORT = 6666;
-    private PrintWriter out;
-    private BufferedReader in;
-    private Socket socket;
     private boolean isUserLoggedIn = false;
+    private static final ClientNetworkHandler clientNetworkHandler = new ClientNetworkHandler();
 
     public static void main(String[] args) throws IOException {
 
         Client client = new Client();
-        client.connectToServer(CLIENT_IP, CLIENT_PORT);
+        clientNetworkHandler.connectToServer(CLIENT_IP, CLIENT_PORT);
         client.communicateServer();
     }
 
-    private void connectToServer(String ip, int port) {
-        try {
-            socket = new Socket(ip, port);
-        } catch (IOException e) {
-            logger.error("connection error {}", e.getMessage());
-        }
-        logger.info("Connected to server at {} : {}", ip, port);
-    }
 
     private void communicateServer() throws IOException {
 
-        out = new PrintWriter(socket.getOutputStream(), true);
-        in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-
         String input;
-        while (!socket.isClosed()) {
-            logger.info(printOptions());
+        while (!clientNetworkHandler.getSocket().isClosed()) {
+            logger.info("Choose option");
             input = scanner.nextLine();
             handleCommand(input);
         }
@@ -60,35 +43,26 @@ public class Client {
             case "logout" -> handleUserLogout();
             case "delete" -> handleUserDelete();
             case "uptime", "info", "help", "status" -> {
-                requestServer(command);
-                String response = getServerResponse();
-                printServerResponse(response);
+                clientNetworkHandler.sendRequest(command);
+                String response = clientNetworkHandler.receiveResponse();
+                clientNetworkHandler.printServerResponse(response);
             }
             case "stop" -> {
-                requestServer("stop");
-                String response = getServerResponse();
-                printServerResponse(response);
-                stopConnection();
+                clientNetworkHandler.sendRequest("stop");
+                String response = clientNetworkHandler.receiveResponse();
+                clientNetworkHandler.printServerResponse(response);
+                clientNetworkHandler.closeConnection();
             }
             default -> logger.info("Request unknown");
         }
     }
 
-    public void printServerResponse(String jsonResp) {
-        try {
-            JsonNode rootNode = mapper.readTree(jsonResp);
-            String prettyString = rootNode.toPrettyString();
-            logger.info(prettyString);
-        } catch (IOException e) {
-            logger.error("Error processing JSON response: {}", e.getMessage());
-        }
-    }
 
     private void handleUserRegistration() throws IOException {
 
-        requestServer("register");
+        clientNetworkHandler.sendRequest("register");
 
-        printServerResponse(getServerResponse());
+        clientNetworkHandler.printServerResponse(clientNetworkHandler.receiveResponse());
 
         logger.info("Enter username:");
         String username = scanner.nextLine();
@@ -97,33 +71,32 @@ public class Client {
         logger.info("Enter role:");
         String role = scanner.nextLine();
 
-        out.println(username);
-        out.println(password);
-        out.println(role);
+        clientNetworkHandler.sendRequest(username);
+        clientNetworkHandler.sendRequest(password);
+        clientNetworkHandler.sendRequest(role);
 
-        String confirmation = in.readLine();
+        String confirmation = clientNetworkHandler.receiveResponse();
         System.out.println(confirmation);
     }
 
     private void handleUserLogin() throws IOException {
 
         if (!isUserLoggedIn) {
-            requestServer("login");
-
-            printServerResponse(getServerResponse());
+            clientNetworkHandler.sendRequest("login");
+            clientNetworkHandler.printServerResponse(clientNetworkHandler.receiveResponse());
 
             logger.info("Enter username:");
             String username = scanner.nextLine();
             logger.info("Enter password:");
             String password = scanner.nextLine();
 
-            out.println(username);
-            out.println(password);
+            clientNetworkHandler.sendRequest(username);
+            clientNetworkHandler.sendRequest(password);
 
-            String loginResponse = in.readLine();
-            printServerResponse(loginResponse);
-
+            String loginResponse = clientNetworkHandler.receiveResponse();
+            clientNetworkHandler.printServerResponse(loginResponse);
             handleLoginResponse(loginResponse);
+
         } else {
             logger.info("User already logged in");
         }
@@ -132,8 +105,8 @@ public class Client {
     private void handleUserLogout() throws IOException {
 
         if (isUserLoggedIn) {
-            requestServer("logout");
-            printServerResponse(getServerResponse());
+            clientNetworkHandler.sendRequest("logout");
+            clientNetworkHandler.printServerResponse(clientNetworkHandler.receiveResponse());
             isUserLoggedIn = false;
         } else {
             logger.info("User already not logged in");
@@ -153,37 +126,16 @@ public class Client {
 
     private void handleUserDelete() throws IOException {
 
-        requestServer("delete");
-
-        printServerResponse(getServerResponse());
+        clientNetworkHandler.sendRequest("delete");
+        clientNetworkHandler.printServerResponse(clientNetworkHandler.receiveResponse());
 
         logger.info("Enter username:");
         String username = scanner.nextLine();
 
-        out.println(username);
+        clientNetworkHandler.sendRequest(username);
 
-        String confirmation = in.readLine();
+        String confirmation = clientNetworkHandler.receiveResponse();
         System.out.println(confirmation);
     }
 
-    public boolean isLoggedIn() {
-        return isUserLoggedIn;
-    }
-
-    private void requestServer(String message) {
-        out.println(message);
-    }
-
-    private String getServerResponse() throws IOException {
-        return in.readLine();
-    }
-
-    public void stopConnection() throws IOException {
-        socket.close();
-        logger.info("Disconnected from server");
-    }
-
-    private String printOptions() {
-        return "Choose an option: status,login,register,uptime,info,help,stop";
-    }
 }
