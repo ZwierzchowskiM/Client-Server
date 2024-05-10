@@ -3,6 +3,7 @@ package org.example.server;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.example.message.MessageService;
 import org.example.user.User;
 import org.example.user.UserDTO;
 import org.example.user.UserDataService;
@@ -22,6 +23,7 @@ public class Server {
     private Session session = new Session();
     private ServerResponse response = new ServerResponse();
     private ServerNetworkHandler serverNetworkHandler;
+    private MessageService messageService = new MessageService();
 
     public Server(int port) {
         try {
@@ -80,6 +82,7 @@ public class Server {
                 case "logout" -> response.printText(handleUserLogout());
                 case "status" -> response.currentLoggedUser(session.getUser());
                 case "delete" -> response.printText(handleUserDelete());
+                case "sendMessage" -> response.printText(handleSendMessage());
                 case "uptime" -> response.calculateUptime(startTime);
                 case "help" -> response.printServerCommands(serverData.getCommandInfo());
                 case "info" -> response.printServerInfo(serverData.getServerInfo());
@@ -155,6 +158,18 @@ public class Server {
             infoLog = "Failed to delete user or user does not exist";
         }
         return infoLog;
+    }
+
+    private String handleSendMessage() throws IOException {
+
+        serverNetworkHandler.sendMessage(response.printText("Please provide username"));
+        String recipient = serverNetworkHandler.receiveMessage();
+        serverNetworkHandler.sendMessage(response.printText("Please provide message"));
+        String content = serverNetworkHandler.receiveMessage();
+        String sender = session.getUser().username();
+        String infoLog = messageService.sendMessage(recipient, content, sender);
+
+        return  infoLog ;
     }
 
     private String stopServer() {

@@ -70,4 +70,7 @@ public class ServerResponse {
     }
 
 
+    public String printMessage(String s) {
+        return  null;
+    }
 }

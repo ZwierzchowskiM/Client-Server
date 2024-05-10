@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import java.io.IOException;
-import java.net.Socket;
 import java.util.Scanner;
 
 public class Client {
@@ -42,6 +41,7 @@ public class Client {
             case "login" -> handleUserLogin();
             case "logout" -> handleUserLogout();
             case "delete" -> handleUserDelete();
+            case "send message" -> handleSendMessage();
             case "uptime", "info", "help", "status" -> {
                 clientNetworkHandler.sendRequest(command);
                 String response = clientNetworkHandler.receiveResponse();
@@ -76,7 +76,7 @@ public class Client {
         clientNetworkHandler.sendRequest(role);
 
         String confirmation = clientNetworkHandler.receiveResponse();
-        System.out.println(confirmation);
+        logger.info(confirmation);
     }
 
     private void handleUserLogin() throws IOException {
@@ -135,7 +135,24 @@ public class Client {
         clientNetworkHandler.sendRequest(username);
 
         String confirmation = clientNetworkHandler.receiveResponse();
-        System.out.println(confirmation);
+        logger.info(confirmation);
+    }
+
+    private void handleSendMessage() throws IOException {
+
+        clientNetworkHandler.sendRequest("sendMessage");
+        clientNetworkHandler.printServerResponse(clientNetworkHandler.receiveResponse());
+
+        logger.info("Enter username:");
+        String username = scanner.nextLine();
+        clientNetworkHandler.sendRequest(username);
+
+        clientNetworkHandler.printServerResponse(clientNetworkHandler.receiveResponse());
+        String message = scanner.nextLine();
+        clientNetworkHandler.sendRequest(message);
+
+        String confirmation = clientNetworkHandler.receiveResponse();
+        logger.info(confirmation);
     }
 
 }
