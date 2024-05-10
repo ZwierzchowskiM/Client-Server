@@ -16,9 +16,14 @@ public class MessageService {
 
         Map<String, User> users = userDataService.loadUsers();
         User user = users.get(recipent);
-        user.getMessages().add(message);
-        userDataService.saveUsers(users);
 
-        return "Message send";
+        if (!user.inboxIsFull()) {
+            user.getMessages().add(message);
+            userDataService.saveUsers(users);
+            return "Message send";
+        }
+        else {
+            return "Message not send, recipient inbox is full";
+        }
     }
 }

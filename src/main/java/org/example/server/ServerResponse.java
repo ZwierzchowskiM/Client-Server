@@ -68,9 +68,4 @@ public class ServerResponse {
 
         return mapper.writeValueAsString(response);
     }
-
-
-    public String printMessage(String s) {
-        return  null;
-    }
 }

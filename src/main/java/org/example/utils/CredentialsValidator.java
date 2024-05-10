@@ -1,7 +1,6 @@
 package org.example.utils;
 
 import java.util.List;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class CredentialsValidator {
@@ -9,7 +8,6 @@ public class CredentialsValidator {
     private static final String USERNAME_PATTERN  = "^[A-Za-z]\\w{4,29}$";
     private static final String PASSWORD_PATTERN = "^[A-Za-z]\\w{4,29}$";
     private static final List<String> ROLES = List.of("admin", "standard");
-
 
 
     public static void validateUsername(String username) {

@@ -8,9 +8,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import org.example.message.Message;
-import org.example.user.Admin;
-import org.example.user.StandardUser;
-
 import java.util.List;
 
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.PROPERTY;
@@ -38,6 +35,6 @@ public abstract class User {
     private List<Message> messages;
 
     public boolean inboxIsFull() {
-       return messages.size()<5;
+       return messages.size()>4;
     }
 }

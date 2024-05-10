@@ -140,19 +140,24 @@ public class Client {
 
     private void handleSendMessage() throws IOException {
 
-        clientNetworkHandler.sendRequest("sendMessage");
-        clientNetworkHandler.printServerResponse(clientNetworkHandler.receiveResponse());
+        if (isUserLoggedIn) {
+            clientNetworkHandler.sendRequest("sendMessage");
 
-        logger.info("Enter username:");
-        String username = scanner.nextLine();
-        clientNetworkHandler.sendRequest(username);
+            clientNetworkHandler.printServerResponse(clientNetworkHandler.receiveResponse());
+            logger.info("Enter recipient:");
+            String username = scanner.nextLine();
+            logger.info("Enter message:");
+            String message = scanner.nextLine();
 
-        clientNetworkHandler.printServerResponse(clientNetworkHandler.receiveResponse());
-        String message = scanner.nextLine();
-        clientNetworkHandler.sendRequest(message);
+            clientNetworkHandler.sendRequest(username);
+            clientNetworkHandler.sendRequest(message);
 
-        String confirmation = clientNetworkHandler.receiveResponse();
-        logger.info(confirmation);
+            String confirmation = clientNetworkHandler.receiveResponse();
+            logger.info(confirmation);
+        } else {
+            logger.info("Required to log in");
+        }
+
     }
-
 }
+

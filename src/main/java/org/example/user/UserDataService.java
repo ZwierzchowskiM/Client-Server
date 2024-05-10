@@ -27,8 +27,6 @@ public class UserDataService {
         return newUser;
     }
 
-
-
     public Map<String,User> loadUsers() throws IOException {
         File file = new File(FILE_PATH);
         if (file.exists() && file.length() != 0) {
@@ -44,7 +42,6 @@ public class UserDataService {
         mapper.writerFor(new TypeReference<Map<String,User>>() { }).writeValue(file, users);
     }
 
-
     public boolean isValidCredentials(String username, String password) throws IOException {
         Map<String, User> users = loadUsers();
         if (users.containsKey(username)) {
@@ -54,11 +51,9 @@ public class UserDataService {
         return false;
     }
 
-
     public User getUser(String username) throws IOException {
         Map<String, User> users = loadUsers();
         return users.get(username);
-
     }
 
     public boolean delete(String username) throws IOException {
@@ -71,6 +66,10 @@ public class UserDataService {
         } else {
             return false;
         }
+    }
 
+    public boolean isUserExisting(String username) throws IOException {
+        Map<String, User> users = loadUsers();
+        return users.containsKey(username);
     }
 }

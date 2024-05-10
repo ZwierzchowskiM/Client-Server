@@ -8,6 +8,7 @@ import org.example.user.User;
 import org.example.user.UserDTO;
 import org.example.user.UserDataService;
 import org.example.utils.CredentialsValidator;
+import org.example.utils.MessageValidator;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -36,7 +37,7 @@ public class Server {
         userDataService = new UserDataService();
         startTime = Instant.now();
         serverNetworkHandler = new ServerNetworkHandler(serverSocket);
-        logger.info("Server started on port {}" , port);
+        logger.info("Server started on port {}", port);
     }
 
     public static void main(String[] args) {
@@ -51,23 +52,21 @@ public class Server {
 
     public void start() {
 
-            try {
-                serverNetworkHandler.acceptConnection();
-                handleClient();
-            } catch (IOException e) {
-                logger.error("Error connecting client {}", e.getMessage());
-            }
-
+        try {
+            serverNetworkHandler.acceptConnection();
+            handleClient();
+        } catch (IOException e) {
+            logger.error("Error connecting client {}", e.getMessage());
+        }
     }
-
 
     private void handleClient() throws IOException {
         try {
             String clientRequest;
             while ((clientRequest = serverNetworkHandler.receiveMessage()) != null) {
                 logger.info("Client request: {}", clientRequest);
-                String response = handleRequest(clientRequest);
-                serverNetworkHandler.sendMessage(response);
+                String serverResponse = handleRequest(clientRequest);
+                serverNetworkHandler.sendMessage(serverResponse);
             }
         } catch (IOException e) {
             logger.error("Error handling client: {}", e.getMessage());
@@ -97,7 +96,6 @@ public class Server {
             return response.printError(e.getMessage());
         }
     }
-
 
     private User handleRegistration() throws IOException, IllegalArgumentException {
 
@@ -137,10 +135,9 @@ public class Server {
         return loginSuccessful;
     }
 
-    private String handleUserLogout() throws IOException, IllegalArgumentException {
+    private String handleUserLogout() {
 
         session.setUser(null);
-
         return "Logout successful";
     }
 
@@ -151,7 +148,6 @@ public class Server {
         String username = serverNetworkHandler.receiveMessage();
 
         String infoLog;
-
         if (userDataService.delete(username)) {
             infoLog = "User successfully deleted";
         } else {
@@ -162,18 +158,24 @@ public class Server {
 
     private String handleSendMessage() throws IOException {
 
-        serverNetworkHandler.sendMessage(response.printText("Please provide username"));
-        String recipient = serverNetworkHandler.receiveMessage();
-        serverNetworkHandler.sendMessage(response.printText("Please provide message"));
-        String content = serverNetworkHandler.receiveMessage();
-        String sender = session.getUser().username();
-        String infoLog = messageService.sendMessage(recipient, content, sender);
+        String infoLog;
 
-        return  infoLog ;
+        serverNetworkHandler.sendMessage(response.printText("Please provide recipient and message"));
+        String recipient = serverNetworkHandler.receiveMessage();
+        String content = serverNetworkHandler.receiveMessage();
+        if (userDataService.isUserExisting(recipient)) {
+            MessageValidator.validateMessage(content);
+            String sender = session.getUser().username();
+            infoLog = messageService.sendMessage(recipient, content, sender);
+        }
+        else {
+            infoLog = "Recipient not existing";
+        }
+        return infoLog;
     }
 
     private String stopServer() {
-            serverNetworkHandler.close();
-            return "Server stopped";
+        serverNetworkHandler.close();
+        return "Server stopped";
     }
 }
