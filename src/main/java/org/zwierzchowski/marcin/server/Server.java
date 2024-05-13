@@ -101,14 +101,16 @@ public class Server {
 
     private User handleRegistration() throws IOException, IllegalArgumentException {
 
-        serverNetworkHandler.sendMessage(response.printText("Please provide username, password and user role"));
-
+        serverNetworkHandler.sendMessage(response.printText("Please provide username"));
         String username = serverNetworkHandler.receiveMessage();
-        String password = serverNetworkHandler.receiveMessage();
-        String role = serverNetworkHandler.receiveMessage();
-
         CredentialsValidator.validateUsername(username);
+
+        serverNetworkHandler.sendMessage(response.printText("Please provide password "));
+        String password = serverNetworkHandler.receiveMessage();
         CredentialsValidator.validatePassword(password);
+
+        serverNetworkHandler.sendMessage(response.printText("Please provide user role"));
+        String role = serverNetworkHandler.receiveMessage();
         CredentialsValidator.validateRole(role);
 
         return userDataService.addUser(username, password, role);
@@ -147,7 +149,6 @@ public class Server {
     private String handleUserDelete() throws IOException {
 
         serverNetworkHandler.sendMessage(response.printText("Please provide username"));
-
         String username = serverNetworkHandler.receiveMessage();
 
         String infoLog;
@@ -163,8 +164,10 @@ public class Server {
 
         String infoLog;
 
-        serverNetworkHandler.sendMessage(response.printText("Please provide recipient and message"));
+        serverNetworkHandler.sendMessage(response.printText("Please provide recipient"));
         String recipient = serverNetworkHandler.receiveMessage();
+
+        serverNetworkHandler.sendMessage(response.printText("Please provide  message"));
         String content = serverNetworkHandler.receiveMessage();
         if (userDataService.isUserExisting(recipient)) {
             MessageValidator.validateMessage(content);

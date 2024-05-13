@@ -24,10 +24,10 @@ public class ClientNetworkHandler {
             socket = new Socket(ip, port);
             out = new PrintWriter(socket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            log.info("Connected to server at {} : {}", ip, port);
         } catch (IOException e) {
             log.error("connection error {}", e.getMessage());
         }
-        log.info("Connected to server at {} : {}", ip, port);
     }
 
     public void sendRequest(String request) {
