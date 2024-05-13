@@ -1,4 +1,4 @@
-package org.example.utils;
+package org.zwierzchowski.marcin.utils;
 
 import java.util.List;
 import java.util.regex.Pattern;

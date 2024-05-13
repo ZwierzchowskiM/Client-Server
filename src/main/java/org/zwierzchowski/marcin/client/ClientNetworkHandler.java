@@ -1,7 +1,8 @@
-package org.example.client;
+package org.zwierzchowski.marcin.client;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.log4j.Log4j2;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -10,10 +11,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
-
+@Log4j2
 public class ClientNetworkHandler {
 
-    private static final Logger logger = LogManager.getLogger(ClientNetworkHandler.class);
     private   Socket socket;
     private  PrintWriter out;
     private  BufferedReader in;
@@ -25,9 +25,9 @@ public class ClientNetworkHandler {
             out = new PrintWriter(socket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         } catch (IOException e) {
-            logger.error("connection error {}", e.getMessage());
+            log.error("connection error {}", e.getMessage());
         }
-        logger.info("Connected to server at {} : {}", ip, port);
+        log.info("Connected to server at {} : {}", ip, port);
     }
 
     public void sendRequest(String request) {
@@ -41,16 +41,16 @@ public class ClientNetworkHandler {
     public void closeConnection() throws IOException {
         socket.close();
         closeResources();
-        logger.info("Disconnected from server");
+        log.info("Disconnected from server");
     }
 
     public void printServerResponse(String jsonResp) {
         try {
             JsonNode rootNode = mapper.readTree(jsonResp);
             String prettyString = rootNode.toPrettyString();
-            logger.info(prettyString);
+            log.info(prettyString);
         } catch (IOException e) {
-            logger.error("Error processing JSON response: {}", e.getMessage());
+            log.error("Error processing JSON response: {}", e.getMessage());
         }
     }
 
@@ -63,7 +63,7 @@ public class ClientNetworkHandler {
                 in.close();
             }
         } catch (IOException e) {
-            logger.error("Failed to close resources: {}", e.getMessage());
+            log.error("Failed to close resources: {}", e.getMessage());
         }
     }
 

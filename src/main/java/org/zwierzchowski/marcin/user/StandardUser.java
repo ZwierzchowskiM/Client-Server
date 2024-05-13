@@ -1,4 +1,4 @@
-package org.example.user;
+package org.zwierzchowski.marcin.user;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;

@@ -1,22 +1,23 @@
-package org.example.server;
+package org.zwierzchowski.marcin.server;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import lombok.extern.log4j.Log4j2;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.example.message.MessageService;
-import org.example.user.User;
-import org.example.user.UserDTO;
-import org.example.user.UserDataService;
-import org.example.utils.CredentialsValidator;
-import org.example.utils.MessageValidator;
+import org.zwierzchowski.marcin.message.MessageService;
+import org.zwierzchowski.marcin.user.User;
+import org.zwierzchowski.marcin.user.UserDTO;
+import org.zwierzchowski.marcin.user.UserDataService;
+import org.zwierzchowski.marcin.utils.CredentialsValidator;
+import org.zwierzchowski.marcin.utils.MessageValidator;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.time.Instant;
 
+@Log4j2
 public class Server {
 
-    private static Logger logger = LogManager.getLogger(Server.class);
     private ServerSocket serverSocket;
     private Instant startTime;
     private ServerData serverData;
@@ -30,14 +31,14 @@ public class Server {
         try {
             serverSocket = new ServerSocket(port);
         } catch (IOException e) {
-            logger.error("Error creating server {}", e.getMessage());
+            log.error("Error creating server {}", e.getMessage());
             throw new RuntimeException(e);
         }
         serverData = new ServerData();
         userDataService = new UserDataService();
         startTime = Instant.now();
         serverNetworkHandler = new ServerNetworkHandler(serverSocket);
-        logger.info("Server started on port {}", port);
+        log.info("Server started on port {}", port);
     }
 
     public static void main(String[] args) {
@@ -46,7 +47,7 @@ public class Server {
         try {
             server.start();
         } catch (RuntimeException e) {
-            logger.error("Starting connection");
+            log.error("Starting connection");
         }
     }
 
@@ -54,9 +55,10 @@ public class Server {
 
         try {
             serverNetworkHandler.acceptConnection();
+            serverNetworkHandler.sendMessage(response.printServerCommands(serverData.getCommandInfo()));
             handleClient();
         } catch (IOException e) {
-            logger.error("Error connecting client {}", e.getMessage());
+            log.error("Error connecting client {}", e.getMessage());
         }
     }
 
@@ -64,12 +66,12 @@ public class Server {
         try {
             String clientRequest;
             while ((clientRequest = serverNetworkHandler.receiveMessage()) != null) {
-                logger.info("Client request: {}", clientRequest);
+                log.info("Client request: {}", clientRequest);
                 String serverResponse = handleRequest(clientRequest);
                 serverNetworkHandler.sendMessage(serverResponse);
             }
         } catch (IOException e) {
-            logger.error("Error handling client: {}", e.getMessage());
+            log.error("Error handling client: {}", e.getMessage());
         }
     }
 
@@ -89,10 +91,10 @@ public class Server {
                 default -> response.printText("Command unknown");
             };
         } catch (IOException e) {
-            logger.error("Error in generating JSON response");
+            log.error("Error in generating JSON response");
             return response.printError(e.getMessage());
         } catch (IllegalArgumentException e) {
-            logger.error(e.getMessage());
+            log.error(e.getMessage());
             return response.printError(e.getMessage());
         }
     }
@@ -115,9 +117,10 @@ public class Server {
 
     private boolean handleUserLogin() throws IOException, IllegalArgumentException {
 
-        serverNetworkHandler.sendMessage(response.printText("Please provide username and password"));
-
+        serverNetworkHandler.sendMessage(response.printText("Please provide username"));
         String username = serverNetworkHandler.receiveMessage();
+
+        serverNetworkHandler.sendMessage(response.printText("Please provide password"));
         String password = serverNetworkHandler.receiveMessage();
 
         CredentialsValidator.validateUsername(username);

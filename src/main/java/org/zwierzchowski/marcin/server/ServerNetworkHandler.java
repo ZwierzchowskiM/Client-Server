@@ -1,7 +1,6 @@
-package org.example.server;
+package org.zwierzchowski.marcin.server;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import lombok.extern.log4j.Log4j2;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -10,9 +9,9 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+@Log4j2
 public class ServerNetworkHandler {
 
-    private static final Logger logger = LogManager.getLogger(ServerNetworkHandler.class);
     private Socket clientSocket;
     private BufferedReader in;
     private PrintWriter out;
@@ -24,12 +23,12 @@ public class ServerNetworkHandler {
 
     public void acceptConnection() throws IOException {
 
-        logger.info("Waiting for a client...");
+        log.info("Waiting for a client...");
 
         clientSocket = serverSocket.accept();
         in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
         out = new PrintWriter(clientSocket.getOutputStream(), true);
-        logger.info("Client connected");
+        log.info("Client connected");
     }
 
     public String receiveMessage() throws IOException {
@@ -44,7 +43,7 @@ public class ServerNetworkHandler {
         try {
             serverSocket.close();
         } catch (IOException e) {
-            logger.error("Error closing resources: {}", e.getMessage());
+            log.error("Error closing resources: {}", e.getMessage());
         }
     }
 
@@ -57,7 +56,7 @@ public class ServerNetworkHandler {
                 in.close();
             }
         } catch (IOException e) {
-            logger.error("Failed to close resources: {}", e.getMessage());
+            log.error("Failed to close resources: {}", e.getMessage());
         }
     }
 }
