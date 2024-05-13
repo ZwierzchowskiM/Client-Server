@@ -2,8 +2,6 @@ package org.zwierzchowski.marcin.server;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.log4j.Log4j2;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.zwierzchowski.marcin.message.MessageService;
 import org.zwierzchowski.marcin.user.User;
 import org.zwierzchowski.marcin.user.UserDTO;
@@ -32,7 +30,7 @@ public class Server {
             serverSocket = new ServerSocket(port);
         } catch (IOException e) {
             log.error("Error creating server {}", e.getMessage());
-            throw new RuntimeException(e);
+            throw new RuntimeException("Failed to create server on port " + port,e);
         }
         serverData = new ServerData();
         userDataService = new UserDataService();
@@ -44,55 +42,52 @@ public class Server {
     public static void main(String[] args) {
 
         Server server = new Server(6666);
-        try {
-            server.start();
-        } catch (RuntimeException e) {
-            log.error("Starting connection");
-        }
+        server.start();
     }
 
     public void start() {
-
-        try {
-            serverNetworkHandler.acceptConnection();
-            handleClient();
-        } catch (IOException e) {
-            log.error("Error connecting client {}", e.getMessage());
-        }
+        serverNetworkHandler.acceptConnection();
+        handleClient();
     }
 
-    private void handleClient() throws IOException {
+    private void handleClient() {
         try {
             String clientRequest;
             serverNetworkHandler.sendMessage(response.printText("Type command"));
 
             while ((clientRequest = serverNetworkHandler.receiveMessage()) != null) {
                 log.info("Client request: {}", clientRequest);
-                String serverResponse = handleRequest(clientRequest);
+
+                Command command = Command.fromString(clientRequest);
+                String serverResponse = handleRequest(command);
+                if ("STOP_SERVER".equals(serverResponse)) {
+                    serverNetworkHandler.sendMessage(response.printText("Shutting down server"));
+                    break;
+                }
                 serverNetworkHandler.sendMessage(serverResponse);
                 serverNetworkHandler.sendMessage(response.printText("Type command"));
-
             }
         } catch (IOException e) {
-            log.error("Error handling client: {}", e.getMessage());
+            log.error("Error handling client", e);
         } finally {
-                serverNetworkHandler.close();
+            serverNetworkHandler.close();
         }
     }
 
-    public String handleRequest(String request) throws JsonProcessingException {
+    public String handleRequest(Command command) throws JsonProcessingException {
         try {
-            return switch (request) {
-                case "register" -> response.registerUser(handleRegistration());
-                case "login" -> response.printLoginStatus(handleUserLogin());
-                case "logout" -> response.printText(handleUserLogout());
-                case "delete" -> response.printText(handleUserDelete());
-                case "sendMessage" -> response.printText(handleSendMessage());
-                case "uptime" -> response.calculateUptime(startTime);
-                case "help" -> response.printServerCommands(serverData.getCommandInfo());
-                case "info" -> response.printServerInfo(serverData.getServerInfo());
-                case "stop" -> response.printText(stopServer());
-                default -> response.printText("Command unknown");
+            return switch (command) {
+                case REGISTER -> response.registerUser(handleRegistration());
+                case LOGIN -> response.printLoginStatus(handleUserLogin());
+                case LOGOUT -> response.printText(handleUserLogout());
+                case DELETE -> response.printText(handleUserDelete());
+                case SEND -> response.printText(handleSendMessage());
+                case READ -> null;
+                case UPTIME -> response.calculateUptime(startTime);
+                case HELP -> response.printServerCommands(serverData.getCommandInfo());
+                case INFO -> response.printServerInfo(serverData.getServerInfo());
+                case STOP -> "STOP_SERVER";
+                case UNKNOWN -> response.printText("Command unknown");
             };
         } catch (IOException e) {
             log.error("Error in generating JSON response");
@@ -184,8 +179,25 @@ public class Server {
         return infoLog;
     }
 
-    private String stopServer() {
-        serverNetworkHandler.close();
-        return "Server stopped";
+    public enum Command {
+        REGISTER,
+        LOGIN,
+        LOGOUT,
+        DELETE,
+        SEND,
+        READ,
+        UPTIME,
+        HELP,
+        INFO,
+        STOP,
+        UNKNOWN;
+
+        public static Command fromString(String command) {
+            try {
+                return Command.valueOf(command.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                return UNKNOWN;
+            }
+        }
     }
 }

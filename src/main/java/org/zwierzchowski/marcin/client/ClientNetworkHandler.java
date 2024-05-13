@@ -4,9 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -43,8 +40,12 @@ public class ClientNetworkHandler {
         return Optional.ofNullable(response);
     }
 
-    public void closeConnection() throws IOException {
-        socket.close();
+    public void closeConnection()  {
+        try {
+            socket.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         closeResources();
         log.info("Disconnected from server");
     }

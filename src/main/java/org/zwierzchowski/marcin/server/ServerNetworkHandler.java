@@ -21,13 +21,17 @@ public class ServerNetworkHandler {
         this.serverSocket = serverSocket;
     }
 
-    public void acceptConnection() throws IOException {
+    public void acceptConnection()  {
 
         log.info("Waiting for a client...");
 
-        clientSocket = serverSocket.accept();
-        in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-        out = new PrintWriter(clientSocket.getOutputStream(), true);
+        try {
+            clientSocket = serverSocket.accept();
+            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+            out = new PrintWriter(clientSocket.getOutputStream(), true);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         log.info("Client connected");
     }
 
@@ -39,15 +43,14 @@ public class ServerNetworkHandler {
         out.println(message);
     }
 
+
     public void close() {
-        try {
-            serverSocket.close();
-        } catch (IOException e) {
-            log.error("Error closing resources: {}", e.getMessage());
-        }
+        closeClientConnection();
+        closeServerSocket();
     }
 
-    private void closeResources() {
+    private void closeClientConnection() {
+        log.info("Closing client connection...");
         try {
             if (out != null) {
                 out.close();
@@ -55,8 +58,22 @@ public class ServerNetworkHandler {
             if (in != null) {
                 in.close();
             }
+            if (clientSocket != null && !clientSocket.isClosed()) {
+                clientSocket.close();
+            }
         } catch (IOException e) {
-            log.error("Failed to close resources: {}", e.getMessage());
+            log.error("Failed to close client connection resources: {}", e.getMessage());
+        }
+    }
+
+    private void closeServerSocket() {
+        log.info("Closing server socket...");
+        try {
+            if (serverSocket != null && !serverSocket.isClosed()) {
+                serverSocket.close();
+            }
+        } catch (IOException e) {
+            log.error("Error closing server socket: {}", e.getMessage());
         }
     }
 }

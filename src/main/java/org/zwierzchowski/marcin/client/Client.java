@@ -12,38 +12,42 @@ public class Client {
     private static final Scanner SCANNER = new Scanner(System.in);
     private static final String CLIENT_IP = "127.0.0.1";
     private static final int CLIENT_PORT = 6666;
-    private static final ClientNetworkHandler CLIENT_NETWORK_HANDLER = new ClientNetworkHandler();
+    private final ClientNetworkHandler clientNetworkHandler = new ClientNetworkHandler();
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         Client client = new Client();
         client.communicateServer();
     }
 
     public Client() {
-        CLIENT_NETWORK_HANDLER.connectToServer(CLIENT_IP, CLIENT_PORT);
+        clientNetworkHandler.connectToServer(CLIENT_IP, CLIENT_PORT);
     }
 
-    private void communicateServer() throws IOException {
-        while (!CLIENT_NETWORK_HANDLER.getSocket().isClosed()) {
-            handleServerResponse();
-            if (SCANNER.hasNextLine()) {
-                String input = SCANNER.nextLine();
-                handleUserInput(input);
+    private void communicateServer() {
+        while (!clientNetworkHandler.getSocket().isClosed()) {
+            try {
+                handleServerResponse();
+                if (SCANNER.hasNextLine()) {
+                    String input = SCANNER.nextLine();
+                    handleUserInput(input);
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
         }
     }
 
     private void handleServerResponse() throws IOException {
-        Optional<String> responseOpt = CLIENT_NETWORK_HANDLER.receiveResponse();
-        responseOpt.ifPresent(CLIENT_NETWORK_HANDLER::printServerResponse);
+        Optional<String> responseOpt = clientNetworkHandler.receiveResponse();
+        responseOpt.ifPresent(clientNetworkHandler::printServerResponse);
     }
 
     private void handleUserInput(String input) throws IOException {
-        CLIENT_NETWORK_HANDLER.sendRequest(input);
-        if ("stop".equalsIgnoreCase(input)) {
-            Optional<String> responseOpt = CLIENT_NETWORK_HANDLER.receiveResponse();
-            responseOpt.ifPresent(CLIENT_NETWORK_HANDLER::printServerResponse);
-            CLIENT_NETWORK_HANDLER.closeConnection();
+        clientNetworkHandler.sendRequest(input);
+        if (input.equalsIgnoreCase("stop")) {
+            Optional<String> responseOpt = clientNetworkHandler.receiveResponse();
+            responseOpt.ifPresent(clientNetworkHandler::printServerResponse);
+            clientNetworkHandler.closeConnection();
         }
     }
 }

@@ -3,8 +3,6 @@ package org.zwierzchowski.marcin.server;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.zwierzchowski.marcin.user.User;
-import org.zwierzchowski.marcin.user.UserDTO;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
