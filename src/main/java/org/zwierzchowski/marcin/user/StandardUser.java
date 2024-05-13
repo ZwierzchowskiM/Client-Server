@@ -16,7 +16,7 @@ public class StandardUser extends User {
     @JsonCreator
     public StandardUser(@JsonProperty("username") String username,
                         @JsonProperty("password")String password) {
-        super(username, password, "standard", new ArrayList<>());
+        super(username, password, Role.USER, new ArrayList<>());
     }
 
 }

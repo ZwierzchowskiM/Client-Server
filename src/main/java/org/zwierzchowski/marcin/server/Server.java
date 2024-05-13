@@ -55,7 +55,6 @@ public class Server {
 
         try {
             serverNetworkHandler.acceptConnection();
-            serverNetworkHandler.sendMessage(response.printServerCommands(serverData.getCommandInfo()));
             handleClient();
         } catch (IOException e) {
             log.error("Error connecting client {}", e.getMessage());
@@ -65,13 +64,19 @@ public class Server {
     private void handleClient() throws IOException {
         try {
             String clientRequest;
+            serverNetworkHandler.sendMessage(response.printText("Type command"));
+
             while ((clientRequest = serverNetworkHandler.receiveMessage()) != null) {
                 log.info("Client request: {}", clientRequest);
                 String serverResponse = handleRequest(clientRequest);
                 serverNetworkHandler.sendMessage(serverResponse);
+                serverNetworkHandler.sendMessage(response.printText("Type command"));
+
             }
         } catch (IOException e) {
             log.error("Error handling client: {}", e.getMessage());
+        } finally {
+                serverNetworkHandler.close();
         }
     }
 
@@ -81,7 +86,6 @@ public class Server {
                 case "register" -> response.registerUser(handleRegistration());
                 case "login" -> response.printLoginStatus(handleUserLogin());
                 case "logout" -> response.printText(handleUserLogout());
-                case "status" -> response.currentLoggedUser(session.getUser());
                 case "delete" -> response.printText(handleUserDelete());
                 case "sendMessage" -> response.printText(handleSendMessage());
                 case "uptime" -> response.calculateUptime(startTime);
@@ -129,10 +133,11 @@ public class Server {
         CredentialsValidator.validatePassword(password);
 
         boolean loginSuccessful;
+
         if (userDataService.isValidCredentials(username, password)) {
             User user = userDataService.getUser(username);
             UserDTO userDTO = new UserDTO(user.getUsername(), user.getRole());
-            session.setUser(userDTO);
+            session.setLoggedInUser(userDTO);
             loginSuccessful = true;
         } else {
             loginSuccessful = false;
@@ -142,7 +147,7 @@ public class Server {
 
     private String handleUserLogout() {
 
-        session.setUser(null);
+        session.logoutUser();
         return "Logout successful";
     }
 
@@ -171,10 +176,9 @@ public class Server {
         String content = serverNetworkHandler.receiveMessage();
         if (userDataService.isUserExisting(recipient)) {
             MessageValidator.validateMessage(content);
-            String sender = session.getUser().username();
+            String sender = session.getLoggedInUser().username();
             infoLog = messageService.sendMessage(recipient, content, sender);
-        }
-        else {
+        } else {
             infoLog = "Recipient not existing";
         }
         return infoLog;

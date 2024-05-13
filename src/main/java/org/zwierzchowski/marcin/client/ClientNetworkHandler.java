@@ -2,6 +2,7 @@ package org.zwierzchowski.marcin.client;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -11,12 +12,15 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.Optional;
+
 @Log4j2
+@Getter
 public class ClientNetworkHandler {
 
-    private   Socket socket;
-    private  PrintWriter out;
-    private  BufferedReader in;
+    private Socket socket;
+    private PrintWriter out;
+    private BufferedReader in;
     private final ObjectMapper mapper = new ObjectMapper();
 
     public void connectToServer(String ip, int port) {
@@ -34,8 +38,9 @@ public class ClientNetworkHandler {
         out.println(request);
     }
 
-    public String receiveResponse() throws IOException {
-        return in.readLine();
+    public Optional<String> receiveResponse() throws IOException {
+        String response = in.readLine();
+        return Optional.ofNullable(response);
     }
 
     public void closeConnection() throws IOException {
@@ -67,7 +72,4 @@ public class ClientNetworkHandler {
         }
     }
 
-    public Socket getSocket() {
-        return socket;
-    }
 }

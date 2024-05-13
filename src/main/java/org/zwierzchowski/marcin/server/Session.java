@@ -8,6 +8,17 @@ import org.zwierzchowski.marcin.user.UserDTO;
 @Setter
 public class Session {
 
-    private UserDTO user;
+    private UserDTO loggedInUser;
 
+    public boolean isUserLoggedIn() {
+        return loggedInUser != null;
+    }
+
+    public boolean isAdminLoggedIn() {
+        return loggedInUser != null && loggedInUser.role().equals("ADMIN");
+    }
+
+    public void logoutUser() {
+        loggedInUser = null;
+    }
 }
