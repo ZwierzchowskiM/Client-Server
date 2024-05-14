@@ -1,4 +1,4 @@
-package org.example.message;
+package org.zwierzchowski.marcin.message;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;

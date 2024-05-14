@@ -1,14 +1,13 @@
-package org.example.utils;
+package org.zwierzchowski.marcin.utils;
 
-import java.util.List;
+import org.zwierzchowski.marcin.user.User;
+
 import java.util.regex.Pattern;
 
 public class CredentialsValidator {
 
-    private static final String USERNAME_PATTERN  = "^[A-Za-z]\\w{4,29}$";
+    private static final String USERNAME_PATTERN = "^[A-Za-z]\\w{4,29}$";
     private static final String PASSWORD_PATTERN = "^[A-Za-z]\\w{4,29}$";
-    private static final List<String> ROLES = List.of("admin", "standard");
-
 
     public static void validateUsername(String username) {
         if (username.length() < 3 || !Pattern.matches(USERNAME_PATTERN, username)) {
@@ -23,8 +22,10 @@ public class CredentialsValidator {
     }
 
     public static void validateRole(String role) {
-        if (!ROLES.contains(role)) {
-            throw new IllegalArgumentException("Invalid role");
+        for (User.Role r : User.Role.values()) {
+            if (!r.name().equalsIgnoreCase(role)) {
+                throw new IllegalArgumentException("Invalid role");
+            }
         }
     }
 }

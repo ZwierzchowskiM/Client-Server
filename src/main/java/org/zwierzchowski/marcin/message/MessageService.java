@@ -1,7 +1,7 @@
-package org.example.message;
+package org.zwierzchowski.marcin.message;
 
-import org.example.user.User;
-import org.example.user.UserDataService;
+import org.zwierzchowski.marcin.user.User;
+import org.zwierzchowski.marcin.user.UserDataService;
 
 import java.io.IOException;
 import java.util.Map;

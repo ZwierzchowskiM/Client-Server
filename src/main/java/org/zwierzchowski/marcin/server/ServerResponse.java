@@ -1,10 +1,8 @@
-package org.example.server;
+package org.zwierzchowski.marcin.server;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.example.user.User;
-import org.example.user.UserDTO;
-
+import org.zwierzchowski.marcin.user.User;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
@@ -35,12 +33,6 @@ public class ServerResponse {
         Map<String, User> registeredUser = new HashMap<>();
         registeredUser.put("Registered user", user);
         return mapper.writeValueAsString(registeredUser);
-    }
-
-    public String currentLoggedUser(UserDTO user) throws JsonProcessingException {
-        Map<String, UserDTO> loggedUser = new HashMap<>();
-        loggedUser.put("Logged user", user);
-        return mapper.writeValueAsString(loggedUser);
     }
 
     public String printText(String text) throws JsonProcessingException {

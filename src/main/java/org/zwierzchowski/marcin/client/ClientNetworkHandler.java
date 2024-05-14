@@ -1,22 +1,23 @@
-package org.example.client;
+package org.zwierzchowski.marcin.client;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
+import lombok.Getter;
+import lombok.extern.log4j.Log4j2;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.Optional;
 
+@Log4j2
+@Getter
 public class ClientNetworkHandler {
 
-    private static final Logger logger = LogManager.getLogger(ClientNetworkHandler.class);
-    private   Socket socket;
-    private  PrintWriter out;
-    private  BufferedReader in;
+    private Socket socket;
+    private PrintWriter out;
+    private BufferedReader in;
     private final ObjectMapper mapper = new ObjectMapper();
 
     public void connectToServer(String ip, int port) {
@@ -24,33 +25,38 @@ public class ClientNetworkHandler {
             socket = new Socket(ip, port);
             out = new PrintWriter(socket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            log.info("Connected to server at {} : {}", ip, port);
         } catch (IOException e) {
-            logger.error("connection error {}", e.getMessage());
+            log.error("connection error {}", e.getMessage());
         }
-        logger.info("Connected to server at {} : {}", ip, port);
     }
 
     public void sendRequest(String request) {
         out.println(request);
     }
 
-    public String receiveResponse() throws IOException {
-        return in.readLine();
+    public Optional<String> receiveResponse() throws IOException {
+        String response = in.readLine();
+        return Optional.ofNullable(response);
     }
 
-    public void closeConnection() throws IOException {
-        socket.close();
+    public void closeConnection()  {
+        try {
+            socket.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         closeResources();
-        logger.info("Disconnected from server");
+        log.info("Disconnected from server");
     }
 
     public void printServerResponse(String jsonResp) {
         try {
             JsonNode rootNode = mapper.readTree(jsonResp);
             String prettyString = rootNode.toPrettyString();
-            logger.info(prettyString);
+            log.info(prettyString);
         } catch (IOException e) {
-            logger.error("Error processing JSON response: {}", e.getMessage());
+            log.error("Error processing JSON response: {}", e.getMessage());
         }
     }
 
@@ -63,11 +69,8 @@ public class ClientNetworkHandler {
                 in.close();
             }
         } catch (IOException e) {
-            logger.error("Failed to close resources: {}", e.getMessage());
+            log.error("Failed to close resources: {}", e.getMessage());
         }
     }
 
-    public Socket getSocket() {
-        return socket;
-    }
 }
