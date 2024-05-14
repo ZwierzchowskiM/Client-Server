@@ -35,9 +35,13 @@ public class ClientNetworkHandler {
         out.println(request);
     }
 
-    public Optional<String> receiveResponse() throws IOException {
-        String response = in.readLine();
-        return Optional.ofNullable(response);
+    public String receiveResponse() throws IOException {
+            String response = in.readLine();
+            return response;
+    }
+
+    public boolean hasResponse() throws IOException {
+        return in.ready();
     }
 
     public void closeConnection()  {

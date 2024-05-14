@@ -23,20 +23,13 @@ public abstract class User {
 
     @JsonProperty("username")
     private String username;
-
     @JsonProperty("password")
     private String password;
-
     @Setter(AccessLevel.NONE)
     @JsonProperty("role")
     private Role role;
-
     @JsonProperty("messages")
     private List<Message> messages;
-
-    public boolean inboxIsFull() {
-       return messages.size()>4;
-    }
 
     public enum Role {
         USER, ADMIN

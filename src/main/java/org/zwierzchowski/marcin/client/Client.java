@@ -13,6 +13,7 @@ public class Client {
     private static final String CLIENT_IP = "127.0.0.1";
     private static final int CLIENT_PORT = 6666;
     private final ClientNetworkHandler clientNetworkHandler = new ClientNetworkHandler();
+    int handleServerResponseCount;
 
     public static void main(String[] args) {
         Client client = new Client();
@@ -38,15 +39,17 @@ public class Client {
     }
 
     private void handleServerResponse() throws IOException {
-        Optional<String> responseOpt = clientNetworkHandler.receiveResponse();
-        responseOpt.ifPresent(clientNetworkHandler::printServerResponse);
+        do {
+            String responseOpt = clientNetworkHandler.receiveResponse();
+            clientNetworkHandler.printServerResponse(responseOpt);
+        } while (clientNetworkHandler.hasResponse());
     }
 
     private void handleUserInput(String input) throws IOException {
         clientNetworkHandler.sendRequest(input);
         if (input.equalsIgnoreCase("stop")) {
-            Optional<String> responseOpt = clientNetworkHandler.receiveResponse();
-            responseOpt.ifPresent(clientNetworkHandler::printServerResponse);
+            String responseOpt = clientNetworkHandler.receiveResponse();
+            clientNetworkHandler.printServerResponse(responseOpt);
             clientNetworkHandler.closeConnection();
         }
     }

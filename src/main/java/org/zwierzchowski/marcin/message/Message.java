@@ -18,12 +18,20 @@ public class Message {
     @JsonProperty("sender")
     private String sender;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd@HH:mm:ss.SSSZ")
-    Date createdDate;
+    private Date createdDate;
+    @JsonProperty("status")
+    private Status status;
 
     @JsonCreator
     public Message(@JsonProperty("content") String content, @JsonProperty("sender") String sender) {
         this.content = content;
         this.sender = sender;
         this.createdDate = Date.from(Instant.now());
+        this.status = Status.UNREAD;
+    }
+
+    public enum Status {
+        READ,
+        UNREAD
     }
 }

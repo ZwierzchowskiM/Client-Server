@@ -2,9 +2,9 @@ package org.zwierzchowski.marcin.server;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.log4j.Log4j2;
+import org.zwierzchowski.marcin.message.Message;
 import org.zwierzchowski.marcin.message.MessageService;
 import org.zwierzchowski.marcin.user.User;
-import org.zwierzchowski.marcin.user.UserDTO;
 import org.zwierzchowski.marcin.user.UserDataService;
 import org.zwierzchowski.marcin.utils.CredentialsValidator;
 import org.zwierzchowski.marcin.utils.MessageValidator;
@@ -12,6 +12,7 @@ import org.zwierzchowski.marcin.utils.MessageValidator;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.time.Instant;
+import java.util.List;
 
 @Log4j2
 public class Server {
@@ -30,7 +31,6 @@ public class Server {
             serverSocket = new ServerSocket(port);
         } catch (IOException e) {
             log.error("Error creating server {}", e.getMessage());
-            throw new RuntimeException("Failed to create server on port " + port,e);
         }
         serverData = new ServerData();
         userDataService = new UserDataService();
@@ -77,12 +77,12 @@ public class Server {
     public String handleRequest(Command command) throws JsonProcessingException {
         try {
             return switch (command) {
-                case REGISTER -> response.registerUser(handleRegistration());
-                case LOGIN -> response.printLoginStatus(handleUserLogin());
-                case LOGOUT -> response.printText(handleUserLogout());
-                case DELETE -> response.printText(handleUserDelete());
-                case SEND -> response.printText(handleSendMessage());
-                case READ -> null;
+                case REGISTER -> handleRegistration();
+                case LOGIN -> handleUserLogin();
+                case LOGOUT -> handleUserLogout();
+                case DELETE -> handleUserDelete();
+                case SEND -> handleSendMessage();
+                case READ -> handleReadMessages();
                 case UPTIME -> response.calculateUptime(startTime);
                 case HELP -> response.printServerCommands(serverData.getCommandInfo());
                 case INFO -> response.printServerInfo(serverData.getServerInfo());
@@ -98,13 +98,12 @@ public class Server {
         }
     }
 
-    private User handleRegistration() throws IOException, IllegalArgumentException {
-
+    private String handleRegistration() throws IOException {
         serverNetworkHandler.sendMessage(response.printText("Please provide username"));
         String username = serverNetworkHandler.receiveMessage();
         CredentialsValidator.validateUsername(username);
 
-        serverNetworkHandler.sendMessage(response.printText("Please provide password "));
+        serverNetworkHandler.sendMessage(response.printText("Please provide password"));
         String password = serverNetworkHandler.receiveMessage();
         CredentialsValidator.validatePassword(password);
 
@@ -112,12 +111,12 @@ public class Server {
         String role = serverNetworkHandler.receiveMessage();
         CredentialsValidator.validateRole(role);
 
-        return userDataService.addUser(username, password, role);
+        User newUser = userDataService.addUser(username, password, role);
+        return response.registerUser(newUser);
     }
 
 
-    private boolean handleUserLogin() throws IOException, IllegalArgumentException {
-
+    private String handleUserLogin() throws IOException {
         serverNetworkHandler.sendMessage(response.printText("Please provide username"));
         String username = serverNetworkHandler.receiveMessage();
 
@@ -127,70 +126,69 @@ public class Server {
         CredentialsValidator.validateUsername(username);
         CredentialsValidator.validatePassword(password);
 
-        boolean loginSuccessful;
-
         if (userDataService.isValidCredentials(username, password)) {
             User user = userDataService.getUser(username);
-            UserDTO userDTO = new UserDTO(user.getUsername(), user.getRole());
-            session.setLoggedInUser(userDTO);
-            loginSuccessful = true;
+            session.setLoggedInUser(user);
+            return response.printLoginStatus(true);
         } else {
-            loginSuccessful = false;
+            return response.printLoginStatus(false);
         }
-        return loginSuccessful;
     }
 
-    private String handleUserLogout() {
-
+    private String handleUserLogout() throws JsonProcessingException {
         session.logoutUser();
-        return "Logout successful";
+        return response.printText("Logout successful");
     }
 
     private String handleUserDelete() throws IOException {
-
         serverNetworkHandler.sendMessage(response.printText("Please provide username"));
         String username = serverNetworkHandler.receiveMessage();
 
-        String infoLog;
         if (userDataService.delete(username)) {
-            infoLog = "User successfully deleted";
+            return response.printText("User successfully deleted");
         } else {
-            infoLog = "Failed to delete user or user does not exist";
+            return response.printText("Failed to delete user or user does not exist");
         }
-        return infoLog;
     }
 
     private String handleSendMessage() throws IOException {
 
         String infoLog;
+        if (isUserLogged()) {
+            serverNetworkHandler.sendMessage(response.printText("Please provide recipient"));
+            String recipient = serverNetworkHandler.receiveMessage();
 
-        serverNetworkHandler.sendMessage(response.printText("Please provide recipient"));
-        String recipient = serverNetworkHandler.receiveMessage();
+            serverNetworkHandler.sendMessage(response.printText("Please provide  message"));
+            String content = serverNetworkHandler.receiveMessage();
 
-        serverNetworkHandler.sendMessage(response.printText("Please provide  message"));
-        String content = serverNetworkHandler.receiveMessage();
-        if (userDataService.isUserExisting(recipient)) {
             MessageValidator.validateMessage(content);
-            String sender = session.getLoggedInUser().username();
+            String sender = session.getLoggedInUser().getUsername();
             infoLog = messageService.sendMessage(recipient, content, sender);
+            return response.printText(infoLog);
         } else {
-            infoLog = "Recipient not existing";
+            return response.printText("User needs to log in");
         }
-        return infoLog;
+    }
+
+    private String handleReadMessages() throws IOException {
+        if (isUserLogged()) {
+            User user = session.getLoggedInUser();
+            List<Message> unreadMessages = messageService.getUnreadMessages(user);
+            if (unreadMessages.isEmpty()) {
+                return response.printText("No unread messages");
+            }
+            return response.printUnreadMessages(unreadMessages);
+        } else {
+            return response.printText("User needs to log in");
+        }
+    }
+
+    private boolean isUserLogged() {
+        return session.isUserLoggedIn();
     }
 
     public enum Command {
-        REGISTER,
-        LOGIN,
-        LOGOUT,
-        DELETE,
-        SEND,
-        READ,
-        UPTIME,
-        HELP,
-        INFO,
-        STOP,
-        UNKNOWN;
+        REGISTER, LOGIN, LOGOUT, DELETE, SEND, READ, UPTIME, HELP, INFO, STOP, UNKNOWN;
 
         public static Command fromString(String command) {
             try {
