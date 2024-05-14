@@ -8,6 +8,7 @@ import org.zwierzchowski.marcin.user.User;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -63,10 +64,10 @@ public class ServerResponse {
     }
 
     public String printUnreadMessages(List<Message> unreadMessages) throws JsonProcessingException {
-        Map<String, Message> messagesResponse = new HashMap<>();
+        Map<String, Message> messagesResponse = new LinkedHashMap<>();
         for (int i = 0; i < unreadMessages.size(); i++) {
             Message m = unreadMessages.get(i);
-            messagesResponse.put("Message " + (i + 1), m);
+            messagesResponse.put("Message " + i+1, m);
         }
         return mapper.writeValueAsString(messagesResponse);
     }

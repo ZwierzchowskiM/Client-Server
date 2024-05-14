@@ -173,7 +173,7 @@ public class Server {
     private String handleReadMessages() throws IOException {
         if (isUserLogged()) {
             User user = session.getLoggedInUser();
-            List<Message> unreadMessages = messageService.getUnreadMessages(user);
+            List<Message> unreadMessages = messageService.getUnreadMessages(user.getUsername());
             if (unreadMessages.isEmpty()) {
                 return response.printText("No unread messages");
             }

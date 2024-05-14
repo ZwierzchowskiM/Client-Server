@@ -2,6 +2,7 @@ package org.zwierzchowski.marcin.message;
 
 import org.zwierzchowski.marcin.user.User;
 import org.zwierzchowski.marcin.user.UserDataService;
+import org.zwierzchowski.marcin.utils.FileService;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -10,19 +11,19 @@ import java.util.Map;
 
 public class MessageService {
 
-    UserDataService userDataService = new UserDataService();
+    FileService fileService = new FileService();
 
     public String sendMessage(String recipent, String content, String sender) throws IOException {
 
         Message message = new Message(content, sender);
-        Map<String, User> users = userDataService.loadUsers();
+        Map<String, User> users = fileService.loadDataBase();
 
         if (users.containsKey(recipent)) {
             User user = users.get(recipent);
 
             if (!checkUserInboxIsFull(user.getMessages())) {
                 user.getMessages().add(message);
-                userDataService.saveUsers(users);
+                fileService.saveDataBase(users);
                 return "Message send";
             } else {
                 return "Message not send, recipient inbox is full";
@@ -32,8 +33,10 @@ public class MessageService {
         }
     }
 
-    public List<Message> getUnreadMessages(User user) {
+    public List<Message> getUnreadMessages(String usermame) throws IOException {
 
+        Map<String, User> users = fileService.loadDataBase();
+        User user = users.get(usermame);
         List<Message> messages = user.getMessages();
         List<Message> unreadMessages = new ArrayList<>();
         if (!messages.isEmpty()) {
@@ -44,6 +47,7 @@ public class MessageService {
                 }
             }
         }
+        fileService.saveDataBase(users);
         return unreadMessages;
     }
 
