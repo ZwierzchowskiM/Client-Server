@@ -9,6 +9,9 @@ public class CredentialsValidator {
     private static final String USERNAME_PATTERN = "^[A-Za-z]\\w{2,29}$";
     private static final String PASSWORD_PATTERN = "^[A-Za-z]\\w{2,29}$";
 
+    private CredentialsValidator() {
+    }
+
     public static void validateUsername(String username) {
         if (username.length() < 3 || !Pattern.matches(USERNAME_PATTERN, username)) {
             throw new IllegalArgumentException("Invalid username format");

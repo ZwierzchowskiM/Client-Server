@@ -31,6 +31,7 @@ public class Server {
             serverSocket = new ServerSocket(port);
         } catch (IOException e) {
             log.error("Error creating server", e);
+            log.info("Application is shutting down...");
             System.exit(1);
         }
         serverData = new ServerData();
@@ -121,9 +122,9 @@ public class Server {
         String role = serverNetworkHandler.receiveMessage();
         CredentialsValidator.validateRole(role);
 
-        userDataService.addUser(username, password, role);
+        User user =  userDataService.addUser(username, password, role);
 
-        return response.printText("User registered");
+        return response.printText("User: " +user.getUsername() +" successfully registered");
     }
 
 

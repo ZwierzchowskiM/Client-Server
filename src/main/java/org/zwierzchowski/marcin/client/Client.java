@@ -3,7 +3,6 @@ package org.zwierzchowski.marcin.client;
 import lombok.extern.log4j.Log4j2;
 
 import java.io.IOException;
-import java.util.Optional;
 import java.util.Scanner;
 
 @Log4j2
@@ -24,6 +23,7 @@ public class Client {
             clientNetworkHandler.connectToServer(CLIENT_IP, CLIENT_PORT);
         } catch (IOException e) {
             log.error("Failed to connect to server at {}:{}", CLIENT_IP, CLIENT_PORT, e);
+            log.info("Application is shutting down...");
             System.exit(1);
         }
     }
