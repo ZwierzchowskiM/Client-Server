@@ -1,4 +1,4 @@
-package org.example.user;
+package org.zwierzchowski.marcin.user;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -7,15 +7,15 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
-import org.example.user.Admin;
-import org.example.user.StandardUser;
+import org.zwierzchowski.marcin.message.Message;
+import java.util.List;
 
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.PROPERTY;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = PROPERTY, property = "type")
 @JsonSubTypes({
         @JsonSubTypes.Type(value = Admin.class, name = "admin"),
-        @JsonSubTypes.Type(value = StandardUser.class, name = "normal")})
+        @JsonSubTypes.Type(value = StandardUser.class, name = "standard")})
 @Getter
 @Setter
 @AllArgsConstructor
@@ -23,13 +23,15 @@ public abstract class User {
 
     @JsonProperty("username")
     private String username;
-
     @JsonProperty("password")
     private String password;
-
     @Setter(AccessLevel.NONE)
     @JsonProperty("role")
-    private String role;
+    private Role role;
+    @JsonProperty("messages")
+    private List<Message> messages;
 
-
+    public enum Role {
+        USER, ADMIN
+    }
 }

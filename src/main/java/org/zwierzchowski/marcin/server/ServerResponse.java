@@ -1,13 +1,15 @@
-package org.example.server;
+package org.zwierzchowski.marcin.server;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.example.user.User;
-import org.example.user.UserDTO;
+import org.zwierzchowski.marcin.message.Message;
+import org.zwierzchowski.marcin.user.User;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ServerResponse {
@@ -37,18 +39,11 @@ public class ServerResponse {
         return mapper.writeValueAsString(registeredUser);
     }
 
-    public String currentLoggedUser(UserDTO user) throws JsonProcessingException {
-        Map<String, UserDTO> loggedUser = new HashMap<>();
-        loggedUser.put("Logged user", user);
-        return mapper.writeValueAsString(loggedUser);
-    }
-
     public String printText(String text) throws JsonProcessingException {
         Map<String, String> message = new HashMap<>();
         message.put("info", text);
-        return mapper.writeValueAsString(message);
+        return mapper.writeValueAsString(text);
     }
-
 
     public String printError(String text) throws JsonProcessingException {
         Map<String, String> message = new HashMap<>();
@@ -65,9 +60,15 @@ public class ServerResponse {
             response.put("status", "failure");
             response.put("message", "Incorrect username or password");
         }
-
         return mapper.writeValueAsString(response);
     }
 
-
+    public String printUnreadMessages(List<Message> unreadMessages) throws JsonProcessingException {
+        Map<String, Message> messagesResponse = new LinkedHashMap<>();
+        for (int i = 0; i < unreadMessages.size(); i++) {
+            Message m = unreadMessages.get(i);
+            messagesResponse.put("Message " + i+1, m);
+        }
+        return mapper.writeValueAsString(messagesResponse);
+    }
 }
