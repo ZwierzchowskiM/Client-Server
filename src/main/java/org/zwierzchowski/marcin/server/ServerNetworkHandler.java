@@ -21,17 +21,12 @@ public class ServerNetworkHandler {
         this.serverSocket = serverSocket;
     }
 
-    public void acceptConnection()  {
+    public void acceptConnection() throws IOException {
 
         log.info("Waiting for a client...");
-
-        try {
-            clientSocket = serverSocket.accept();
-            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-            out = new PrintWriter(clientSocket.getOutputStream(), true);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        clientSocket = serverSocket.accept();
+        in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+        out = new PrintWriter(clientSocket.getOutputStream(), true);
         log.info("Client connected");
     }
 

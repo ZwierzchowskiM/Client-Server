@@ -33,12 +33,6 @@ public class ServerResponse {
         return mapper.writeValueAsString(serverInfo);
     }
 
-    public String registerUser(User user) throws JsonProcessingException {
-        Map<String, User> registeredUser = new HashMap<>();
-        registeredUser.put("Registered user", user);
-        return mapper.writeValueAsString(registeredUser);
-    }
-
     public String printText(String text) throws JsonProcessingException {
         Map<String, String> message = new HashMap<>();
         message.put("info", text);

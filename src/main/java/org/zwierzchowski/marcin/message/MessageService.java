@@ -8,9 +8,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class MessageService {
 
+    private static final int MAX_UNREAD_MESSAGES = 4;
     FileService fileService = new FileService();
 
     public String sendMessage(String recipent, String content, String sender) throws IOException {
@@ -33,10 +35,10 @@ public class MessageService {
         }
     }
 
-    public List<Message> getUnreadMessages(String usermame) throws IOException {
+    public List<Message> getUnreadMessages(String username) throws IOException {
 
         Map<String, User> users = fileService.loadDataBase();
-        User user = users.get(usermame);
+        User user = users.get(username);
         List<Message> messages = user.getMessages();
         List<Message> unreadMessages = new ArrayList<>();
         if (!messages.isEmpty()) {
@@ -58,6 +60,6 @@ public class MessageService {
                 countUnread++;
             }
         }
-        return countUnread > 4;
+        return countUnread > MAX_UNREAD_MESSAGES;
     }
 }

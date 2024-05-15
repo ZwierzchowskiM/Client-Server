@@ -17,7 +17,7 @@ public class Message {
     private String content;
     @JsonProperty("sender")
     private String sender;
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd@HH:mm:ss.SSSZ")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd@HH:mm:ss")
     private Date createdDate;
     @JsonProperty("status")
     private Status status;

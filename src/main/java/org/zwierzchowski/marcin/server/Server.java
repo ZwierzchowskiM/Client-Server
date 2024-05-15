@@ -30,7 +30,8 @@ public class Server {
         try {
             serverSocket = new ServerSocket(port);
         } catch (IOException e) {
-            log.error("Error creating server {}", e.getMessage());
+            log.error("Error creating server", e);
+            System.exit(1);
         }
         serverData = new ServerData();
         userDataService = new UserDataService();
@@ -46,7 +47,13 @@ public class Server {
     }
 
     public void start() {
-        serverNetworkHandler.acceptConnection();
+
+        try {
+            serverNetworkHandler.acceptConnection();
+        } catch (IOException e) {
+            log.error("Failed to connect client", e);
+            System.exit(1);
+        }
         handleClient();
     }
 
@@ -89,11 +96,14 @@ public class Server {
                 case STOP -> "STOP_SERVER";
                 case UNKNOWN -> response.printText("Command unknown");
             };
+        } catch (JsonProcessingException e) {
+            log.error("JSON processing error", e);
+            return response.printError(e.getMessage());
         } catch (IOException e) {
-            log.error("Error in generating JSON response");
+            log.error("IO error", e);
             return response.printError(e.getMessage());
         } catch (IllegalArgumentException e) {
-            log.error(e.getMessage());
+            log.error("{}", e.getMessage());
             return response.printError(e.getMessage());
         }
     }
@@ -111,8 +121,9 @@ public class Server {
         String role = serverNetworkHandler.receiveMessage();
         CredentialsValidator.validateRole(role);
 
-        User newUser = userDataService.addUser(username, password, role);
-        return response.registerUser(newUser);
+        userDataService.addUser(username, password, role);
+
+        return response.printText("User registered");
     }
 
 
@@ -136,11 +147,18 @@ public class Server {
     }
 
     private String handleUserLogout() throws JsonProcessingException {
+        if (!session.isUserLoggedIn()) {
+            return response.printText("No user logged in");
+        }
         session.logoutUser();
         return response.printText("Logout successful");
     }
 
     private String handleUserDelete() throws IOException {
+
+        if (session.isAdminLoggedIn()) {
+            return response.printText("Admin privileges are required to delete a user.");
+        }
         serverNetworkHandler.sendMessage(response.printText("Please provide username"));
         String username = serverNetworkHandler.receiveMessage();
 
@@ -153,39 +171,35 @@ public class Server {
 
     private String handleSendMessage() throws IOException {
 
-        String infoLog;
-        if (isUserLogged()) {
-            serverNetworkHandler.sendMessage(response.printText("Please provide recipient"));
-            String recipient = serverNetworkHandler.receiveMessage();
-
-            serverNetworkHandler.sendMessage(response.printText("Please provide  message"));
-            String content = serverNetworkHandler.receiveMessage();
-
-            MessageValidator.validateMessage(content);
-            String sender = session.getLoggedInUser().getUsername();
-            infoLog = messageService.sendMessage(recipient, content, sender);
-            return response.printText(infoLog);
-        } else {
+        if (!session.isUserLoggedIn()) {
             return response.printText("User needs to log in");
         }
+        String infoLog;
+        serverNetworkHandler.sendMessage(response.printText("Please provide recipient"));
+        String recipient = serverNetworkHandler.receiveMessage();
+
+        serverNetworkHandler.sendMessage(response.printText("Please provide  message"));
+        String content = serverNetworkHandler.receiveMessage();
+
+        MessageValidator.validateMessage(content);
+        String sender = session.getLoggedInUser().getUsername();
+        infoLog = messageService.sendMessage(recipient, content, sender);
+        return response.printText(infoLog);
     }
 
     private String handleReadMessages() throws IOException {
-        if (isUserLogged()) {
-            User user = session.getLoggedInUser();
-            List<Message> unreadMessages = messageService.getUnreadMessages(user.getUsername());
-            if (unreadMessages.isEmpty()) {
-                return response.printText("No unread messages");
-            }
-            return response.printUnreadMessages(unreadMessages);
-        } else {
+
+        if (!session.isUserLoggedIn()) {
             return response.printText("User needs to log in");
         }
+        User user = session.getLoggedInUser();
+        List<Message> unreadMessages = messageService.getUnreadMessages(user.getUsername());
+        if (unreadMessages.isEmpty()) {
+            return response.printText("No unread messages");
+        }
+        return response.printUnreadMessages(unreadMessages);
     }
 
-    private boolean isUserLogged() {
-        return session.isUserLoggedIn();
-    }
 
     public enum Command {
         REGISTER, LOGIN, LOGOUT, DELETE, SEND, READ, UPTIME, HELP, INFO, STOP, UNKNOWN;

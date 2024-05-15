@@ -13,7 +13,6 @@ public class Client {
     private static final String CLIENT_IP = "127.0.0.1";
     private static final int CLIENT_PORT = 6666;
     private final ClientNetworkHandler clientNetworkHandler = new ClientNetworkHandler();
-    int handleServerResponseCount;
 
     public static void main(String[] args) {
         Client client = new Client();
@@ -21,7 +20,12 @@ public class Client {
     }
 
     public Client() {
-        clientNetworkHandler.connectToServer(CLIENT_IP, CLIENT_PORT);
+        try {
+            clientNetworkHandler.connectToServer(CLIENT_IP, CLIENT_PORT);
+        } catch (IOException e) {
+            log.error("Failed to connect to server at {}:{}", CLIENT_IP, CLIENT_PORT, e);
+            System.exit(1);
+        }
     }
 
     private void communicateServer() {
@@ -33,7 +37,7 @@ public class Client {
                     handleUserInput(input);
                 }
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                log.error("Communication error", e);
             }
         }
     }
@@ -51,6 +55,7 @@ public class Client {
             String responseOpt = clientNetworkHandler.receiveResponse();
             clientNetworkHandler.printServerResponse(responseOpt);
             clientNetworkHandler.closeConnection();
+            SCANNER.close();
         }
     }
 }

@@ -20,15 +20,11 @@ public class ClientNetworkHandler {
     private BufferedReader in;
     private final ObjectMapper mapper = new ObjectMapper();
 
-    public void connectToServer(String ip, int port) {
-        try {
+    public void connectToServer(String ip, int port) throws IOException {
             socket = new Socket(ip, port);
             out = new PrintWriter(socket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            log.info("Connected to server at {} : {}", ip, port);
-        } catch (IOException e) {
-            log.error("connection error {}", e.getMessage());
-        }
+            log.info("Connected to server at {}:{}", ip, port);
     }
 
     public void sendRequest(String request) {
@@ -36,8 +32,7 @@ public class ClientNetworkHandler {
     }
 
     public String receiveResponse() throws IOException {
-            String response = in.readLine();
-            return response;
+        return in.readLine();
     }
 
     public boolean hasResponse() throws IOException {
@@ -48,7 +43,7 @@ public class ClientNetworkHandler {
         try {
             socket.close();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            log.error("Error closing socket", e);
         }
         closeResources();
         log.info("Disconnected from server");
@@ -60,7 +55,7 @@ public class ClientNetworkHandler {
             String prettyString = rootNode.toPrettyString();
             log.info(prettyString);
         } catch (IOException e) {
-            log.error("Error processing JSON response: {}", e.getMessage());
+            log.error("Error processing JSON response", e);
         }
     }
 
@@ -73,7 +68,7 @@ public class ClientNetworkHandler {
                 in.close();
             }
         } catch (IOException e) {
-            log.error("Failed to close resources: {}", e.getMessage());
+            log.error("Failed to close resources", e);
         }
     }
 

@@ -6,8 +6,8 @@ import java.util.regex.Pattern;
 
 public class CredentialsValidator {
 
-    private static final String USERNAME_PATTERN = "^[A-Za-z]\\w{4,29}$";
-    private static final String PASSWORD_PATTERN = "^[A-Za-z]\\w{4,29}$";
+    private static final String USERNAME_PATTERN = "^[A-Za-z]\\w{2,29}$";
+    private static final String PASSWORD_PATTERN = "^[A-Za-z]\\w{2,29}$";
 
     public static void validateUsername(String username) {
         if (username.length() < 3 || !Pattern.matches(USERNAME_PATTERN, username)) {
@@ -22,10 +22,15 @@ public class CredentialsValidator {
     }
 
     public static void validateRole(String role) {
+        boolean isValidRole = false;
         for (User.Role r : User.Role.values()) {
-            if (!r.name().equalsIgnoreCase(role)) {
-                throw new IllegalArgumentException("Invalid role");
+            if (r.name().equalsIgnoreCase(role)) {
+                isValidRole = true;
+                break;
             }
+        }
+        if (!isValidRole) {
+            throw new IllegalArgumentException("Invalid role");
         }
     }
 }
