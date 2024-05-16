@@ -15,7 +15,7 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.PROPERTY;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = PROPERTY, property = "type")
 @JsonSubTypes({
         @JsonSubTypes.Type(value = Admin.class, name = "admin"),
-        @JsonSubTypes.Type(value = StandardUser.class, name = "standard")})
+        @JsonSubTypes.Type(value = StandardUser.class, name = "user")})
 @Getter
 @Setter
 @AllArgsConstructor

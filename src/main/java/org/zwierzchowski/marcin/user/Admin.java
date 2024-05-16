@@ -14,7 +14,7 @@ import java.util.ArrayList;
 public class Admin extends User {
     @JsonCreator
     public Admin(@JsonProperty("username") String username,
-                 @JsonProperty("password")String password) {
-        super(username, password,Role.ADMIN, new ArrayList<>());
+                 @JsonProperty("password") String password) {
+        super(username, password, Role.ADMIN, new ArrayList<>());
     }
 }

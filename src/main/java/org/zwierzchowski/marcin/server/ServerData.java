@@ -7,7 +7,7 @@ public class ServerData {
 
     private final Map<String, String> commandsInfo = new HashMap<>();
     private final Map<String, String> severInfo = new HashMap<>();
-    private static final String SERVER_VERSION = "0.1.0";
+    private static final String SERVER_VERSION = "0.2.0";
     private static final String SERVER_CREATION_DATE = "19.04.2024";
 
     public ServerData() {

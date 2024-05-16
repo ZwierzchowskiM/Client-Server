@@ -29,7 +29,6 @@ public class ServerNetworkHandler {
         out = new PrintWriter(clientSocket.getOutputStream(), true);
         log.info("Client connected");
     }
-
     public String receiveMessage() throws IOException {
         return in.readLine();
     }
@@ -37,7 +36,6 @@ public class ServerNetworkHandler {
     public void sendMessage(String message) {
         out.println(message);
     }
-
 
     public void close() {
         closeClientConnection();

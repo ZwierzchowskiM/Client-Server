@@ -2,6 +2,7 @@ package org.zwierzchowski.marcin.user;
 
 import org.mindrot.jbcrypt.BCrypt;
 import org.zwierzchowski.marcin.utils.FileService;
+
 import java.io.IOException;
 import java.util.Map;
 
@@ -16,7 +17,7 @@ public class UserDataService {
             default -> throw new IllegalStateException("Unexpected value: " + role);
         };
 
-        users.put(username,newUser);
+        users.put(username, newUser);
         FileService.saveDataBase(users);
         return newUser;
     }
@@ -25,7 +26,7 @@ public class UserDataService {
         Map<String, User> users = FileService.loadDataBase();
         if (users.containsKey(username)) {
             User user = users.get(username);
-            return BCrypt.checkpw(password,user.getPassword());
+            return BCrypt.checkpw(password, user.getPassword());
         }
         return false;
     }
@@ -38,7 +39,7 @@ public class UserDataService {
     public boolean delete(String username) throws IOException {
 
         Map<String, User> users = FileService.loadDataBase();
-        if (users.containsKey(username)){
+        if (users.containsKey(username)) {
             users.remove(username);
             FileService.saveDataBase(users);
             return true;

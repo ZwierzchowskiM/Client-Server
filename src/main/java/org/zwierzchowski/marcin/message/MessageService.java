@@ -2,6 +2,7 @@ package org.zwierzchowski.marcin.message;
 
 import org.zwierzchowski.marcin.user.User;
 import org.zwierzchowski.marcin.utils.FileService;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;

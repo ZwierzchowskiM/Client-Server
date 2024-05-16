@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -20,10 +21,10 @@ public class ClientNetworkHandler {
     private final ObjectMapper mapper = new ObjectMapper();
 
     public void connectToServer(String ip, int port) throws IOException {
-            socket = new Socket(ip, port);
-            out = new PrintWriter(socket.getOutputStream(), true);
-            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            log.info("Connected to server at {}:{}", ip, port);
+        socket = new Socket(ip, port);
+        out = new PrintWriter(socket.getOutputStream(), true);
+        in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        log.info("Connected to server at {}:{}", ip, port);
     }
 
     public void sendRequest(String request) {
@@ -38,7 +39,7 @@ public class ClientNetworkHandler {
         return in.ready();
     }
 
-    public void closeConnection()  {
+    public void closeConnection() {
         try {
             socket.close();
         } catch (IOException e) {

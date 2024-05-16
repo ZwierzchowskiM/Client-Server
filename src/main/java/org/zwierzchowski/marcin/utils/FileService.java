@@ -21,15 +21,17 @@ public class FileService {
     public static Map<String, User> loadDataBase() throws IOException {
         File file = new File(FILE_PATH);
         if (file.exists() && file.length() != 0) {
-            return OBJECT_MAPPER.readValue(file, new TypeReference<Map<String,User>>() {});
+            return OBJECT_MAPPER.readValue(file, new TypeReference<Map<String, User>>() {
+            });
         } else {
             return new HashMap<>();
         }
     }
 
-    public static void saveDataBase(Map<String,User> users) throws IOException {
+    public static void saveDataBase(Map<String, User> users) throws IOException {
         File file = new File(FILE_PATH);
         OBJECT_MAPPER.enable(SerializationFeature.INDENT_OUTPUT);
-        OBJECT_MAPPER.writerFor(new TypeReference<Map<String,User>>() { }).writeValue(file, users);
+        OBJECT_MAPPER.writerFor(new TypeReference<Map<String, User>>() {
+        }).writeValue(file, users);
     }
 }

@@ -61,7 +61,7 @@ public class ServerResponse {
         Map<String, Message> messagesResponse = new LinkedHashMap<>();
         for (int i = 0; i < unreadMessages.size(); i++) {
             Message m = unreadMessages.get(i);
-            messagesResponse.put("Message " + i+1, m);
+            messagesResponse.put("Message " + (i + 1), m);
         }
         return mapper.writeValueAsString(messagesResponse);
     }

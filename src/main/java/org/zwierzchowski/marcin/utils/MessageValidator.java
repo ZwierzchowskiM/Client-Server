@@ -8,7 +8,7 @@ public class MessageValidator {
     }
 
     public static void validateMessage(String content) {
-        if (content == null || content.length()> MESSAGE_LENGTH) {
+        if (content == null || content.length() > MESSAGE_LENGTH) {
             throw new IllegalArgumentException("Invalid message format");
         }
     }

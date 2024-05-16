@@ -10,12 +10,12 @@ import java.util.ArrayList;
 
 @Getter
 @Setter
-@JsonTypeName("standard")
+@JsonTypeName("user")
 public class StandardUser extends User {
 
     @JsonCreator
     public StandardUser(@JsonProperty("username") String username,
-                        @JsonProperty("password")String password) {
+                        @JsonProperty("password") String password) {
         super(username, password, Role.USER, new ArrayList<>());
     }
 

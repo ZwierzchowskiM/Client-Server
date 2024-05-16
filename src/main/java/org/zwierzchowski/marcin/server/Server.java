@@ -42,13 +42,11 @@ public class Server {
     }
 
     public static void main(String[] args) {
-
         Server server = new Server(6666);
         server.start();
     }
 
     public void start() {
-
         try {
             serverNetworkHandler.acceptConnection();
         } catch (IOException e) {
@@ -69,7 +67,6 @@ public class Server {
                 Command command = Command.fromString(clientRequest);
                 String serverResponse = handleRequest(command);
                 if ("STOP_SERVER".equals(serverResponse)) {
-                    serverNetworkHandler.sendMessage(response.printText("Shutting down server"));
                     break;
                 }
                 serverNetworkHandler.sendMessage(serverResponse);
@@ -91,10 +88,10 @@ public class Server {
                 case DELETE -> handleUserDelete();
                 case SEND -> handleSendMessage();
                 case READ -> handleReadMessages();
+                case STOP -> handleStopServer();
                 case UPTIME -> response.calculateUptime(startTime);
                 case HELP -> response.printServerCommands(serverData.getCommandInfo());
                 case INFO -> response.printServerInfo(serverData.getServerInfo());
-                case STOP -> "STOP_SERVER";
                 case UNKNOWN -> response.printText("Command unknown");
             };
         } catch (JsonProcessingException e) {
@@ -122,9 +119,9 @@ public class Server {
         String role = serverNetworkHandler.receiveMessage();
         CredentialsValidator.validateRole(role);
 
-        User user =  userDataService.addUser(username, password, role);
+        User user = userDataService.addUser(username, password, role);
 
-        return response.printText("User: " +user.getUsername() +" successfully registered");
+        return response.printText("User: " + user.getUsername() + " successfully registered");
     }
 
 
@@ -147,6 +144,11 @@ public class Server {
         }
     }
 
+    private String handleStopServer() throws JsonProcessingException {
+        serverNetworkHandler.sendMessage(response.printText("Shutting down server"));
+        return "STOP_SERVER";
+    }
+
     private String handleUserLogout() throws JsonProcessingException {
         if (!session.isUserLoggedIn()) {
             return response.printText("No user logged in");
@@ -157,7 +159,7 @@ public class Server {
 
     private String handleUserDelete() throws IOException {
 
-        if (session.isAdminLoggedIn()) {
+        if (!session.isAdminLoggedIn()) {
             return response.printText("Admin privileges are required to delete a user.");
         }
         serverNetworkHandler.sendMessage(response.printText("Please provide username"));
