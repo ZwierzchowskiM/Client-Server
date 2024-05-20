@@ -21,7 +21,7 @@ public class MessageService {
       User user = users.get(recipent);
 
       if (!checkUserInboxIsFull(user.getMessages())) {
-        user.getMessages().add(message);
+        user.addMessage(message);
         FileService.saveDataBase(users);
         return "Message send";
       } else {
@@ -46,6 +46,7 @@ public class MessageService {
         }
       }
     }
+
     FileService.saveDataBase(users);
     return unreadMessages;
   }

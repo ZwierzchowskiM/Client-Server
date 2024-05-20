@@ -39,4 +39,8 @@ public abstract class User {
     USER,
     ADMIN
   }
+
+  public void addMessage(Message message) {
+    messages.add(message);
+  }
 }

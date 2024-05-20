@@ -2,6 +2,7 @@ package org.zwierzchowski.marcin.server;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.log4j.Log4j2;
+import org.zwierzchowski.marcin.exception.InvalidCredentialsException;
 import org.zwierzchowski.marcin.message.Message;
 import org.zwierzchowski.marcin.message.MessageService;
 import org.zwierzchowski.marcin.user.User;
@@ -54,13 +55,13 @@ public class ServerCommandService {
         } catch (IOException e) {
             log.error("IO error", e);
             return response.printError(e.getMessage());
-        } catch (IllegalArgumentException e) {
+        } catch (InvalidCredentialsException e) {
             log.error("{}", e.getMessage());
             return response.printError(e.getMessage());
         }
     }
 
-    private String handleRegistration() throws IOException {
+    private String handleRegistration() throws IOException, InvalidCredentialsException {
         serverNetworkHandler.sendMessage(response.printText("Please provide username"));
         String username = serverNetworkHandler.receiveMessage();
         CredentialsValidator.validateUsername(username);
@@ -78,7 +79,7 @@ public class ServerCommandService {
         return response.printText("User: " + user.getUsername() + " successfully registered");
     }
 
-    private String handleUserLogin() throws IOException {
+  private String handleUserLogin() throws IOException, InvalidCredentialsException {
         serverNetworkHandler.sendMessage(response.printText("Please provide username"));
         String username = serverNetworkHandler.receiveMessage();
 
