@@ -12,9 +12,9 @@ import java.util.ArrayList;
 @Setter
 @JsonTypeName("admin")
 public class Admin extends User {
-    @JsonCreator
-    public Admin(@JsonProperty("username") String username,
-                 @JsonProperty("password") String password) {
-        super(username, password, Role.ADMIN, new ArrayList<>());
-    }
+  @JsonCreator
+  public Admin(
+      @JsonProperty("username") String username, @JsonProperty("password") String password) {
+    super(username, password, Role.ADMIN, new ArrayList<>());
+  }
 }

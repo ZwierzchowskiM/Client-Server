@@ -14,24 +14,29 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.PROPERTY;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = PROPERTY, property = "type")
 @JsonSubTypes({
-        @JsonSubTypes.Type(value = Admin.class, name = "admin"),
-        @JsonSubTypes.Type(value = StandardUser.class, name = "user")})
+  @JsonSubTypes.Type(value = Admin.class, name = "admin"),
+  @JsonSubTypes.Type(value = StandardUser.class, name = "user")
+})
 @Getter
 @Setter
 @AllArgsConstructor
 public abstract class User {
 
-    @JsonProperty("username")
-    private String username;
-    @JsonProperty("password")
-    private String password;
-    @Setter(AccessLevel.NONE)
-    @JsonProperty("role")
-    private Role role;
-    @JsonProperty("messages")
-    private List<Message> messages;
+  @JsonProperty("username")
+  private String username;
 
-    public enum Role {
-        USER, ADMIN
-    }
+  @JsonProperty("password")
+  private String password;
+
+  @Setter(AccessLevel.NONE)
+  @JsonProperty("role")
+  private Role role;
+
+  @JsonProperty("messages")
+  private List<Message> messages;
+
+  public enum Role {
+    USER,
+    ADMIN
+  }
 }

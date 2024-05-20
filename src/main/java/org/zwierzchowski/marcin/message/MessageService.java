@@ -10,53 +10,53 @@ import java.util.Map;
 
 public class MessageService {
 
-    private static final int MAX_UNREAD_MESSAGES = 4;
+  private static final int MAX_UNREAD_MESSAGES = 4;
 
-    public String sendMessage(String recipent, String content, String sender) throws IOException {
+  public String sendMessage(String recipent, String content, String sender) throws IOException {
 
-        Message message = new Message(content, sender);
-        Map<String, User> users = FileService.loadDataBase();
+    Message message = new Message(content, sender);
+    Map<String, User> users = FileService.loadDataBase();
 
-        if (users.containsKey(recipent)) {
-            User user = users.get(recipent);
+    if (users.containsKey(recipent)) {
+      User user = users.get(recipent);
 
-            if (!checkUserInboxIsFull(user.getMessages())) {
-                user.getMessages().add(message);
-                FileService.saveDataBase(users);
-                return "Message send";
-            } else {
-                return "Message not send, recipient inbox is full";
-            }
-        } else {
-            return "Recipient not existing";
-        }
-    }
-
-    public List<Message> getUnreadMessages(String username) throws IOException {
-
-        Map<String, User> users = FileService.loadDataBase();
-        User user = users.get(username);
-        List<Message> messages = user.getMessages();
-        List<Message> unreadMessages = new ArrayList<>();
-        if (!messages.isEmpty()) {
-            for (Message m : messages) {
-                if (m.getStatus().equals(Message.Status.UNREAD)) {
-                    unreadMessages.add(m);
-                    m.setStatus(Message.Status.READ);
-                }
-            }
-        }
+      if (!checkUserInboxIsFull(user.getMessages())) {
+        user.getMessages().add(message);
         FileService.saveDataBase(users);
-        return unreadMessages;
+        return "Message send";
+      } else {
+        return "Message not send, recipient inbox is full";
+      }
+    } else {
+      return "Recipient not existing";
     }
+  }
 
-    private boolean checkUserInboxIsFull(List<Message> messages) {
-        int countUnread = 0;
-        for (Message m : messages) {
-            if (m.getStatus().equals(Message.Status.UNREAD)) {
-                countUnread++;
-            }
+  public List<Message> getUnreadMessages(String username) throws IOException {
+
+    Map<String, User> users = FileService.loadDataBase();
+    User user = users.get(username);
+    List<Message> messages = user.getMessages();
+    List<Message> unreadMessages = new ArrayList<>();
+    if (!messages.isEmpty()) {
+      for (Message m : messages) {
+        if (m.getStatus().equals(Message.Status.UNREAD)) {
+          unreadMessages.add(m);
+          m.setStatus(Message.Status.READ);
         }
-        return countUnread > MAX_UNREAD_MESSAGES;
+      }
     }
+    FileService.saveDataBase(users);
+    return unreadMessages;
+  }
+
+  private boolean checkUserInboxIsFull(List<Message> messages) {
+    int countUnread = 0;
+    for (Message m : messages) {
+      if (m.getStatus().equals(Message.Status.UNREAD)) {
+        countUnread++;
+      }
+    }
+    return countUnread > MAX_UNREAD_MESSAGES;
+  }
 }

@@ -13,11 +13,9 @@ import java.util.ArrayList;
 @JsonTypeName("user")
 public class StandardUser extends User {
 
-    @JsonCreator
-    public StandardUser(@JsonProperty("username") String username,
-                        @JsonProperty("password") String password) {
-        super(username, password, Role.USER, new ArrayList<>());
-    }
-
+  @JsonCreator
+  public StandardUser(
+      @JsonProperty("username") String username, @JsonProperty("password") String password) {
+    super(username, password, Role.USER, new ArrayList<>());
+  }
 }
-

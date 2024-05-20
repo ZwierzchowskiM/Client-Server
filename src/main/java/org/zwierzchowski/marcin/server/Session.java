@@ -8,17 +8,17 @@ import org.zwierzchowski.marcin.user.User;
 @Setter
 public class Session {
 
-    private User loggedInUser;
+  private User loggedInUser;
 
-    public boolean isUserLoggedIn() {
-        return loggedInUser != null;
-    }
+  public boolean isUserLoggedIn() {
+    return loggedInUser != null;
+  }
 
-    public boolean isAdminLoggedIn() {
-        return loggedInUser != null && loggedInUser.getRole().equals(User.Role.ADMIN);
-    }
+  public boolean isAdminLoggedIn() {
+    return loggedInUser != null && loggedInUser.getRole().equals(User.Role.ADMIN);
+  }
 
-    public void logoutUser() {
-        loggedInUser = null;
-    }
+  public void logoutUser() {
+    loggedInUser = null;
+  }
 }
