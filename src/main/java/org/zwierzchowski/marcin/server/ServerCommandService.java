@@ -3,6 +3,7 @@ package org.zwierzchowski.marcin.server;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.log4j.Log4j2;
 import org.zwierzchowski.marcin.exception.InvalidCredentialsException;
+import org.zwierzchowski.marcin.exception.InvalidMessageException;
 import org.zwierzchowski.marcin.message.Message;
 import org.zwierzchowski.marcin.message.MessageService;
 import org.zwierzchowski.marcin.user.User;
@@ -56,7 +57,10 @@ public class ServerCommandService {
             log.error("IO error", e);
             return response.printError(e.getMessage());
         } catch (InvalidCredentialsException e) {
-            log.error("{}", e.getMessage());
+            log.error("Invalid Credentials format", e);
+            return response.printError(e.getMessage());
+        } catch (InvalidMessageException e) {
+            log.error("Invalid Message format", e);
             return response.printError(e.getMessage());
         }
     }
@@ -126,7 +130,7 @@ public class ServerCommandService {
         }
     }
 
-    private String handleSendMessage() throws IOException {
+    private String handleSendMessage() throws IOException, InvalidMessageException {
 
         if (!session.isUserLoggedIn()) {
             return response.printText("User needs to log in");
