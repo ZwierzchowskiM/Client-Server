@@ -57,12 +57,8 @@ public class MessageService {
   }
 
   private boolean checkUserInboxIsFull(List<Message> messages) {
-    int countUnread = 0;
-    for (Message m : messages) {
-      if (m.getStatus().equals(Message.Status.UNREAD)) {
-        countUnread++;
-      }
-    }
+    long countUnread =
+        messages.stream().filter(m -> m.getStatus().equals(Message.Status.UNREAD)).count();
     return countUnread > MAX_UNREAD_MESSAGES;
   }
 }

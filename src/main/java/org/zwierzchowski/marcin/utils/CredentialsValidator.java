@@ -13,13 +13,13 @@ public class CredentialsValidator {
   private CredentialsValidator() {}
 
   public static void validateUsername(String username) throws InvalidCredentialsException {
-    if (username.length() < 3 || !Pattern.matches(USERNAME_PATTERN, username)) {
+    if (!Pattern.matches(USERNAME_PATTERN, username)) {
       throw new InvalidCredentialsException("Invalid username format");
     }
   }
 
   public static void validatePassword(String password) throws InvalidCredentialsException {
-    if (password.length() < 3 || !Pattern.matches(PASSWORD_PATTERN, password)) {
+    if (!Pattern.matches(PASSWORD_PATTERN, password)) {
       throw new InvalidCredentialsException("Invalid password format");
     }
   }

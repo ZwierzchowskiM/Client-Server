@@ -130,15 +130,14 @@ class MessageServiceTest {
 
   @Test
   @DisplayName("Get unread messages for non existing user should throw UserInboxIsFullException")
-  void shouldThrowUserNotFoundExceptionWhenUserNotExist() throws IOException, UserNotFoundException {
+  void shouldThrowUserNotFoundExceptionWhenUserNotExist()
+      throws IOException, UserNotFoundException {
 
     Map<String, User> users = new HashMap<>();
 
     try (MockedStatic<FileService> fileServiceMock = Mockito.mockStatic(FileService.class)) {
       fileServiceMock.when(FileService::loadDataBase).thenReturn(users);
-      assertThrows(
-              UserNotFoundException.class,
-              () -> messageService.getUnreadMessages(recipient));
+      assertThrows(UserNotFoundException.class, () -> messageService.getUnreadMessages(recipient));
     }
   }
 }
