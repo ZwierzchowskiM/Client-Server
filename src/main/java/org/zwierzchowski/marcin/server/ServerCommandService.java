@@ -161,16 +161,20 @@ public class ServerCommandService {
   }
 
   private String handleReadMessages() throws IOException {
-
-    if (!session.isUserLoggedIn()) {
-      return response.printText("User needs to log in");
+    try {
+      if (!session.isUserLoggedIn()) {
+        return response.printText("User needs to log in");
+      }
+      User user = session.getLoggedInUser();
+      List<Message> unreadMessages = messageService.getUnreadMessages(user.getUsername());
+      if (unreadMessages.isEmpty()) {
+        return response.printText("No unread messages");
+      }
+      return response.printUnreadMessages(unreadMessages);
+    } catch (UserNotFoundException e) {
+      log.error("User not found", e);
+      return response.printText("Recipient not found: " + e.getMessage());
     }
-    User user = session.getLoggedInUser();
-    List<Message> unreadMessages = messageService.getUnreadMessages(user.getUsername());
-    if (unreadMessages.isEmpty()) {
-      return response.printText("No unread messages");
-    }
-    return response.printUnreadMessages(unreadMessages);
   }
 
   public enum Command {

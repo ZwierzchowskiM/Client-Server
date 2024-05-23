@@ -12,7 +12,7 @@ import java.util.Map;
 
 public class MessageService {
 
-  private static final int MAX_UNREAD_MESSAGES = 0;
+  private static final int MAX_UNREAD_MESSAGES = 4;
 
   public void sendMessage(String recipient, String content, String sender)
       throws UserNotFoundException, UserInboxIsFullException, IOException {
@@ -33,9 +33,13 @@ public class MessageService {
     FileService.saveDataBase(users);
   }
 
-  public List<Message> getUnreadMessages(String username) throws IOException {
+  public List<Message> getUnreadMessages(String username)
+      throws IOException, UserNotFoundException {
 
     Map<String, User> users = FileService.loadDataBase();
+    if (!users.containsKey(username)) {
+      throw new UserNotFoundException("Recipient not found", username);
+    }
     User user = users.get(username);
     List<Message> messages = user.getMessages();
     List<Message> unreadMessages = new ArrayList<>();
