@@ -1,5 +1,7 @@
 package org.zwierzchowski.marcin.message;
 
+import org.zwierzchowski.marcin.exception.UserInboxIsFullException;
+import org.zwierzchowski.marcin.exception.UserNotFoundException;
 import org.zwierzchowski.marcin.user.User;
 import org.zwierzchowski.marcin.utils.FileService;
 
@@ -10,26 +12,25 @@ import java.util.Map;
 
 public class MessageService {
 
-  private static final int MAX_UNREAD_MESSAGES = 4;
+  private static final int MAX_UNREAD_MESSAGES = 0;
 
-  public String sendMessage(String recipent, String content, String sender) throws IOException {
-
+  public void sendMessage(String recipient, String content, String sender)
+      throws UserNotFoundException, UserInboxIsFullException, IOException {
     Message message = new Message(content, sender);
     Map<String, User> users = FileService.loadDataBase();
 
-    if (users.containsKey(recipent)) {
-      User user = users.get(recipent);
-
-      if (!checkUserInboxIsFull(user.getMessages())) {
-        user.addMessage(message);
-        FileService.saveDataBase(users);
-        return "Message send";
-      } else {
-        return "Message not send, recipient inbox is full";
-      }
-    } else {
-      return "Recipient not existing";
+    if (!users.containsKey(recipient)) {
+      throw new UserNotFoundException("Recipient not found", recipient);
     }
+
+    User user = users.get(recipient);
+
+    if (checkUserInboxIsFull(user.getMessages())) {
+      throw new UserInboxIsFullException("Recipient inbox is full", recipient);
+    }
+
+    user.addMessage(message);
+    FileService.saveDataBase(users);
   }
 
   public List<Message> getUnreadMessages(String username) throws IOException {
