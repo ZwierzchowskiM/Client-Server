@@ -2,6 +2,7 @@ package org.zwierzchowski.marcin.server;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import org.zwierzchowski.marcin.message.Message;
 import org.zwierzchowski.marcin.user.User;
 
@@ -35,8 +36,6 @@ public class ServerResponse {
   }
 
   public String printText(String text) throws JsonProcessingException {
-    Map<String, String> message = new HashMap<>();
-    message.put("info", text);
     return mapper.writeValueAsString(text);
   }
 

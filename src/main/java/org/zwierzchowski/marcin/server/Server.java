@@ -56,7 +56,7 @@ public class Server {
   private void handleClient() {
     try {
       String clientRequest;
-      serverNetworkHandler.sendMessage(response.printText("Type command"));
+      serverNetworkHandler.sendMessage(serverCommandService.printOptions());
 
       while ((clientRequest = serverNetworkHandler.receiveMessage()) != null) {
         log.info("Client request: {}", clientRequest);
@@ -66,7 +66,7 @@ public class Server {
           break;
         }
         serverNetworkHandler.sendMessage(serverResponse);
-        serverNetworkHandler.sendMessage(response.printText("Type command"));
+        serverNetworkHandler.sendMessage(serverCommandService.printOptions());
       }
     } catch (IOException e) {
       log.error("Error handling client", e);

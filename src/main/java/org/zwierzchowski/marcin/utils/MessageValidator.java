@@ -1,6 +1,5 @@
 package org.zwierzchowski.marcin.utils;
 
-import org.zwierzchowski.marcin.exception.InvalidCredentialsException;
 import org.zwierzchowski.marcin.exception.InvalidMessageException;
 
 public class MessageValidator {

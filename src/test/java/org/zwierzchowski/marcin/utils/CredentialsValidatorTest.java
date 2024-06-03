@@ -2,8 +2,7 @@ package org.zwierzchowski.marcin.utils;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.zwierzchowski.marcin.exception.InvalidCredentialsException;
-import org.zwierzchowski.marcin.exception.InvalidMessageException;
+import org.zwierzchowski.marcin.exception.InvalidCredentialsFormatException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -19,14 +18,14 @@ class CredentialsValidatorTest {
   @DisplayName("Validate empty username")
   void shouldThrowExceptionForEmptyUsername() {
     assertThrows(
-        InvalidCredentialsException.class, () -> CredentialsValidator.validateUsername(""));
+        InvalidCredentialsFormatException.class, () -> CredentialsValidator.validateUsername(""));
   }
 
   @Test
   @DisplayName("Validate short username")
   void shouldThrowExceptionForShortUsername() {
     assertThrows(
-        InvalidCredentialsException.class, () -> CredentialsValidator.validateUsername("u"));
+        InvalidCredentialsFormatException.class, () -> CredentialsValidator.validateUsername("u"));
   }
 
   @Test
@@ -34,7 +33,7 @@ class CredentialsValidatorTest {
   void shouldThrowExceptionForLongUsername() {
     String longUsername = "Loremipsumdolorsitametconsecteturadipiscingelit";
     assertThrows(
-        InvalidCredentialsException.class,
+        InvalidCredentialsFormatException.class,
         () -> CredentialsValidator.validateUsername(longUsername));
   }
 
@@ -42,7 +41,7 @@ class CredentialsValidatorTest {
   @DisplayName("Validate username with white spaces")
   void shouldThrowExceptionForUsernameWithWhiteSpaces() {
     assertThrows(
-        InvalidCredentialsException.class,
+        InvalidCredentialsFormatException.class,
         () -> CredentialsValidator.validateUsername("test user"));
   }
 
@@ -50,7 +49,7 @@ class CredentialsValidatorTest {
   @DisplayName("Validate username with special characters")
   void shouldThrowExceptionForUsernameWithSpecialCharacter() {
     assertThrows(
-        InvalidCredentialsException.class,
+        InvalidCredentialsFormatException.class,
         () -> CredentialsValidator.validateUsername("test$user"));
   }
 
@@ -64,14 +63,14 @@ class CredentialsValidatorTest {
   @DisplayName("Validate empty password")
   void shouldThrowExceptionForEmptyPassword() {
     assertThrows(
-        InvalidCredentialsException.class, () -> CredentialsValidator.validatePassword(""));
+        InvalidCredentialsFormatException.class, () -> CredentialsValidator.validatePassword(""));
   }
 
   @Test
   @DisplayName("Validate short password")
   void shouldThrowExceptionForShortPassword() {
     assertThrows(
-        InvalidCredentialsException.class, () -> CredentialsValidator.validatePassword("p"));
+        InvalidCredentialsFormatException.class, () -> CredentialsValidator.validatePassword("p"));
   }
 
   @Test
@@ -79,7 +78,7 @@ class CredentialsValidatorTest {
   void shouldThrowExceptionForLongPassword() {
     String longPassword = "Loremipsumdolorsitametconsecteturadipiscingelit";
     assertThrows(
-        InvalidCredentialsException.class,
+        InvalidCredentialsFormatException.class,
         () -> CredentialsValidator.validatePassword(longPassword));
   }
 
@@ -87,7 +86,7 @@ class CredentialsValidatorTest {
   @DisplayName("Validate password with white spaces")
   void shouldThrowExceptionForPasswordWithWhiteSpaces() {
     assertThrows(
-        InvalidCredentialsException.class,
+        InvalidCredentialsFormatException.class,
         () -> CredentialsValidator.validatePassword("test password"));
   }
 
@@ -107,6 +106,6 @@ class CredentialsValidatorTest {
   @DisplayName("Validate incorrect role")
   void shouldThrowExceptionForInvalidRole() {
     assertThrows(
-        InvalidCredentialsException.class, () -> CredentialsValidator.validateRole("invalidRole"));
+        InvalidCredentialsFormatException.class, () -> CredentialsValidator.validateRole("invalidRole"));
   }
 }

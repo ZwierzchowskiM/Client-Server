@@ -6,7 +6,8 @@ import org.junit.jupiter.api.Test;
 import org.mindrot.jbcrypt.BCrypt;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.zwierzchowski.marcin.exception.InvalidCredentialsException;
+import org.zwierzchowski.marcin.exception.InvalidCredentialsFormatException;
+import org.zwierzchowski.marcin.exception.InvalidPasswordException;
 import org.zwierzchowski.marcin.exception.UserNotFoundException;
 import org.zwierzchowski.marcin.utils.FileService;
 
@@ -23,6 +24,7 @@ class UserDataServiceTest {
   User testUser;
   String username;
   String password;
+  String hashedPassword;
   String role;
 
   @BeforeEach
@@ -31,12 +33,13 @@ class UserDataServiceTest {
     users = new HashMap<>();
     username = "john";
     password = "pass";
-    testUser = new StandardUser("john", "pass");
+    hashedPassword = BCrypt.hashpw("pass", BCrypt.gensalt());
+    testUser = new StandardUser(username, hashedPassword);
   }
 
   @Test
   @DisplayName("Should return standard user")
-  void shouldReturnUserWithStandardRole() throws IOException, InvalidCredentialsException {
+  void shouldReturnUserWithStandardRole() throws IOException, InvalidCredentialsFormatException {
 
     role = "user";
 
@@ -53,7 +56,7 @@ class UserDataServiceTest {
 
   @Test
   @DisplayName("Should return standard user")
-  void shouldReturnUserWithAdminRole() throws IOException, InvalidCredentialsException {
+  void shouldReturnUserWithAdminRole() throws IOException, InvalidCredentialsFormatException {
 
     role = "admin";
 
@@ -78,7 +81,7 @@ class UserDataServiceTest {
       fileServiceMock.when(FileService::loadDataBase).thenReturn(users);
 
       assertThrows(
-          InvalidCredentialsException.class,
+          InvalidCredentialsFormatException.class,
           () -> userDataService.addUser(username, password, role));
     }
   }
@@ -86,7 +89,7 @@ class UserDataServiceTest {
   @Test
   @DisplayName("Should return testUser when username is valid")
   void shouldReturnUserWhenValidUsername()
-      throws IOException, InvalidCredentialsException, UserNotFoundException {
+      throws IOException, InvalidCredentialsFormatException, UserNotFoundException {
 
     users.put(username, testUser);
 
@@ -114,9 +117,6 @@ class UserDataServiceTest {
     }
   }
 
-
-
-
   @Test
   @DisplayName("should remove user from database when exists")
   void shouldRemoveUserFromDatabaseWhenExists() throws UserNotFoundException, IOException {
@@ -132,19 +132,57 @@ class UserDataServiceTest {
 
   @Test
   @DisplayName("Should throw UserNotFoundException when username is invalid")
-  void shouldThrowUserNotFoundExceptionWhenInvalidUsername() throws IOException {
+  void shouldThrowUserNotFoundExceptionWhenInvalidUsername() {
     try (MockedStatic<FileService> fileServiceMock = Mockito.mockStatic(FileService.class)) {
       fileServiceMock.when(FileService::loadDataBase).thenReturn(users);
 
       String invalidUsername = "invalidUser";
-      UserNotFoundException exception = assertThrows(
-              UserNotFoundException.class,
-              () -> userDataService.deleteUser(invalidUsername)
-      );
+      UserNotFoundException exception =
+          assertThrows(
+              UserNotFoundException.class, () -> userDataService.deleteUser(invalidUsername));
     }
   }
 
   @Test
-  void isValidCredentials() {}
+  @DisplayName("Should return true for valid credentials")
+  void shouldReturnTrueForValidCredentials()
+      throws IOException, UserNotFoundException, InvalidPasswordException {
+    users.put(username, testUser);
 
+    try (MockedStatic<FileService> fileServiceMock = Mockito.mockStatic(FileService.class)) {
+      fileServiceMock.when(FileService::loadDataBase).thenReturn(users);
+
+      boolean isValid = userDataService.isValidCredentials(username, password);
+      assertTrue(isValid);
+    }
+  }
+
+  @Test
+  @DisplayName("Should throw InvalidPasswordException for invalid password")
+  void shouldThrowInvalidPasswordExceptionForInvalidPassword() throws IOException {
+    users.put(username, testUser);
+
+    try (MockedStatic<FileService> fileServiceMock = Mockito.mockStatic(FileService.class)) {
+      fileServiceMock.when(FileService::loadDataBase).thenReturn(users);
+
+      InvalidPasswordException exception =
+          assertThrows(
+              InvalidPasswordException.class,
+              () -> userDataService.isValidCredentials(username, "wrongpassword"));
+    }
+  }
+
+  @Test
+  @DisplayName("Should throw UserNotFoundException for invalid username")
+  void shouldThrowUserNotFoundExceptionForInvalidUsername() throws IOException {
+    try (MockedStatic<FileService> fileServiceMock = Mockito.mockStatic(FileService.class)) {
+      fileServiceMock.when(FileService::loadDataBase).thenReturn(users);
+
+      String invalidUsername = "invaliduser";
+      UserNotFoundException exception =
+          assertThrows(
+              UserNotFoundException.class,
+              () -> userDataService.isValidCredentials(invalidUsername, password));
+    }
+  }
 }

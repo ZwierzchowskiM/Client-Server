@@ -1,11 +1,9 @@
 package org.zwierzchowski.marcin.server;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import lombok.extern.log4j.Log4j2;
-import org.zwierzchowski.marcin.exception.InvalidCredentialsException;
-import org.zwierzchowski.marcin.exception.InvalidMessageException;
-import org.zwierzchowski.marcin.exception.UserInboxIsFullException;
-import org.zwierzchowski.marcin.exception.UserNotFoundException;
+import org.zwierzchowski.marcin.exception.*;
 import org.zwierzchowski.marcin.message.Message;
 import org.zwierzchowski.marcin.message.MessageService;
 import org.zwierzchowski.marcin.user.User;
@@ -58,16 +56,16 @@ public class ServerCommandService {
     } catch (IOException e) {
       log.error("IO error", e);
       return response.printError(e.getMessage());
-    } catch (InvalidCredentialsException e) {
+    } catch (InvalidCredentialsFormatException e) {
       log.error("Invalid Credentials format", e);
       return response.printError(e.getMessage());
-    } catch (UserNotFoundException e) {
-      log.error("User not found", e);
+    } catch (UserNotFoundException | InvalidPasswordException e) {
+      log.error("Invalid user credentials", e);
       return response.printError(e.getMessage());
     }
   }
 
-  private String handleRegistration() throws IOException, InvalidCredentialsException {
+  private String handleRegistration() throws IOException, InvalidCredentialsFormatException {
     serverNetworkHandler.sendMessage(response.printText("Please provide username"));
     String username = serverNetworkHandler.receiveMessage();
     CredentialsValidator.validateUsername(username);
@@ -85,20 +83,18 @@ public class ServerCommandService {
     return response.printText("User: " + user.getUsername() + " successfully registered");
   }
 
-  private String handleUserLogin() throws IOException, UserNotFoundException {
+  private String handleUserLogin()
+      throws IOException, UserNotFoundException, InvalidPasswordException {
     serverNetworkHandler.sendMessage(response.printText("Please provide username"));
     String username = serverNetworkHandler.receiveMessage();
 
     serverNetworkHandler.sendMessage(response.printText("Please provide password"));
     String password = serverNetworkHandler.receiveMessage();
 
-    if (userDataService.isValidCredentials(username, password)) {
-      User user = userDataService.getUser(username);
-      session.setLoggedInUser(user);
-      return response.printLoginStatus(true);
-    } else {
-      return response.printLoginStatus(false);
-    }
+    userDataService.isValidCredentials(username, password);
+    User user = userDataService.getUser(username);
+    session.setLoggedInUser(user);
+    return response.printLoginStatus(true);
   }
 
   private String handleStopServer() throws JsonProcessingException {
@@ -172,6 +168,44 @@ public class ServerCommandService {
       log.error("User not found", e);
       return response.printText("Recipient not found: " + e.getMessage());
     }
+  }
+
+  public String printOptions() throws JsonProcessingException {
+    if (session.isUserLoggedIn()) {
+      return printUserOptions();
+    } else if (session.isAdminLoggedIn()) {
+      return printAdminOptions();
+    } else return printWelcomeOptions();
+  }
+
+  private String printWelcomeOptions() throws JsonProcessingException {
+
+    StringBuilder options = new StringBuilder();
+    options.append("Type command: ").append("LOGIN,").append("REGISTER.");
+    return response.printText(options.toString());
+  }
+
+  private String printAdminOptions() throws JsonProcessingException {
+    StringBuilder options = new StringBuilder();
+    options
+        .append("Type command: ")
+        .append("SEND, ")
+        .append("READ, ")
+        .append("DELETE, ")
+        .append("HELP, ")
+        .append("LOGOUT.");
+    return response.printText(options.toString());
+  }
+
+  private String printUserOptions() throws JsonProcessingException {
+    StringBuilder options = new StringBuilder();
+    options
+        .append("Type command: ")
+        .append("SEND, ")
+        .append("READ, ")
+        .append("HELP, ")
+        .append("LOGOUT.");
+    return response.printText(options.toString());
   }
 
   public enum Command {
