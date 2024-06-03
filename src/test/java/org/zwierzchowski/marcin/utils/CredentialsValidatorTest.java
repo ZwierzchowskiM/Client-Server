@@ -105,7 +105,7 @@ class CredentialsValidatorTest {
 
   @Test
   @DisplayName("Validate incorrect role")
-  void shouldNotThrowExceptionForInvalidRole() {
+  void shouldThrowExceptionForInvalidRole() {
     assertThrows(
         InvalidCredentialsException.class, () -> CredentialsValidator.validateRole("invalidRole"));
   }

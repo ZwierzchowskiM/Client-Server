@@ -1,6 +1,8 @@
 package org.zwierzchowski.marcin.user;
 
 import org.mindrot.jbcrypt.BCrypt;
+import org.zwierzchowski.marcin.exception.InvalidCredentialsException;
+import org.zwierzchowski.marcin.exception.UserNotFoundException;
 import org.zwierzchowski.marcin.utils.FileService;
 
 import java.io.IOException;
@@ -8,14 +10,15 @@ import java.util.Map;
 
 public class UserDataService {
 
-  public User addUser(String username, String password, String role) throws IOException {
+  public User addUser(String username, String password, String role)
+      throws IOException, InvalidCredentialsException {
     Map<String, User> users = FileService.loadDataBase();
     String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
     User newUser =
         switch (role.toLowerCase()) {
           case "user" -> new StandardUser(username, hashedPassword);
           case "admin" -> new Admin(username, hashedPassword);
-          default -> throw new IllegalStateException("Unexpected value: " + role);
+          default -> throw new InvalidCredentialsException("Unexpected value: " + role);
         };
 
     users.put(username, newUser);
@@ -32,20 +35,24 @@ public class UserDataService {
     return false;
   }
 
-  public User getUser(String username) throws IOException {
+  public User getUser(String username) throws IOException, UserNotFoundException {
     Map<String, User> users = FileService.loadDataBase();
-    return users.get(username);
+    User user = users.get(username);
+    if (user == null) {
+      throw new UserNotFoundException("User not find:", username);
+    }
+    return user;
   }
 
-  public boolean delete(String username) throws IOException {
+  public void deleteUser(String username) throws IOException, UserNotFoundException {
 
     Map<String, User> users = FileService.loadDataBase();
     if (users.containsKey(username)) {
       users.remove(username);
       FileService.saveDataBase(users);
-      return true;
-    } else {
-      return false;
+    }
+    else {
+      throw new UserNotFoundException("User not found",username);
     }
   }
 }

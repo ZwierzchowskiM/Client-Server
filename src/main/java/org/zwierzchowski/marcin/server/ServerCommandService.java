@@ -61,6 +61,9 @@ public class ServerCommandService {
     } catch (InvalidCredentialsException e) {
       log.error("Invalid Credentials format", e);
       return response.printError(e.getMessage());
+    } catch (UserNotFoundException e) {
+      log.error("User not found", e);
+      return response.printError(e.getMessage());
     }
   }
 
@@ -82,15 +85,12 @@ public class ServerCommandService {
     return response.printText("User: " + user.getUsername() + " successfully registered");
   }
 
-  private String handleUserLogin() throws IOException, InvalidCredentialsException {
+  private String handleUserLogin() throws IOException, UserNotFoundException {
     serverNetworkHandler.sendMessage(response.printText("Please provide username"));
     String username = serverNetworkHandler.receiveMessage();
 
     serverNetworkHandler.sendMessage(response.printText("Please provide password"));
     String password = serverNetworkHandler.receiveMessage();
-
-    CredentialsValidator.validateUsername(username);
-    CredentialsValidator.validatePassword(password);
 
     if (userDataService.isValidCredentials(username, password)) {
       User user = userDataService.getUser(username);
@@ -114,7 +114,7 @@ public class ServerCommandService {
     return response.printText("Logout successful");
   }
 
-  private String handleUserDelete() throws IOException {
+  private String handleUserDelete() throws IOException, UserNotFoundException {
 
     if (!session.isAdminLoggedIn()) {
       return response.printText("Admin privileges are required to delete a user.");
@@ -122,11 +122,8 @@ public class ServerCommandService {
     serverNetworkHandler.sendMessage(response.printText("Please provide username"));
     String username = serverNetworkHandler.receiveMessage();
 
-    if (userDataService.delete(username)) {
-      return response.printText("User successfully deleted");
-    } else {
-      return response.printText("Failed to delete user or user does not exist");
-    }
+    userDataService.deleteUser(username);
+    return response.printText("User successfully deleted");
   }
 
   private String handleSendMessage() throws JsonProcessingException {

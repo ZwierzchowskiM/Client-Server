@@ -1,7 +1,6 @@
 package org.zwierzchowski.marcin.message;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -23,6 +22,9 @@ class MessageServiceTest {
   String recipient;
   String content;
   String sender;
+  User userRecipient;
+  User userSender;
+  Map<String, User> users;
 
   @BeforeEach
   void setUp() {
@@ -31,15 +33,15 @@ class MessageServiceTest {
     recipient = "recipient";
     content = "Test message";
     sender = "sender";
+    userRecipient = new StandardUser("john", "pass");
+    userSender = new StandardUser("tom", "pass");
+    users = new HashMap<>();
   }
 
   @Test
   @DisplayName("Send message to user and check if is placed in inbox")
   void shouldAddMessageToRecipientInbox() {
 
-    User userRecipient = new StandardUser("john", "pass");
-    User userSender = new StandardUser("tom", "pass");
-    Map<String, User> users = new HashMap<>();
     users.put(recipient, userRecipient);
     users.put(sender, userSender);
 
@@ -55,8 +57,6 @@ class MessageServiceTest {
   @DisplayName("Send message to not existed user should throw UserNotExistException")
   void shouldThrowUserNotFoundExceptionWhenRecipientNotExists() {
 
-    Map<String, User> users = new HashMap<>();
-
     try (MockedStatic<FileService> fileServiceMock = Mockito.mockStatic(FileService.class)) {
       fileServiceMock.when(FileService::loadDataBase).thenReturn(users);
 
@@ -70,9 +70,6 @@ class MessageServiceTest {
   @DisplayName("Send message to user which inbox is full should throw UserInboxIsFullException")
   void shouldThrowUserInboxIsFullExceptionWhenRecipientInboxIsFull() {
 
-    User userRecipient = new StandardUser("john", "pass");
-    User userSender = new StandardUser("tom", "pass");
-    Map<String, User> users = new HashMap<>();
     users.put(recipient, userRecipient);
     users.put(sender, userSender);
     Message message1 = new Message("test", "testUser");
@@ -100,13 +97,11 @@ class MessageServiceTest {
   void shouldGetListOfUnreadUserMessagesWhenInboxIsNotEmpty()
       throws UserNotFoundException, IOException {
 
-    User user = new StandardUser("john", "pass");
-    Map<String, User> users = new HashMap<>();
-    users.put(recipient, user);
+    users.put(recipient, userRecipient);
     Message message1 = new Message("test", "testUser");
     Message message2 = new Message("test", "testUser");
-    user.addMessage(message1);
-    user.addMessage(message2);
+    userRecipient.addMessage(message1);
+    userRecipient.addMessage(message2);
 
     try (MockedStatic<FileService> fileServiceMock = Mockito.mockStatic(FileService.class)) {
       fileServiceMock.when(FileService::loadDataBase).thenReturn(users);
@@ -118,9 +113,7 @@ class MessageServiceTest {
   @DisplayName("Get empty list when user has no unread messages")
   void shouldGetEmptyListWhenInboxIsEmpty() throws IOException, UserNotFoundException {
 
-    User user = new StandardUser("john", "pass");
-    Map<String, User> users = new HashMap<>();
-    users.put(recipient, user);
+    users.put(recipient, userRecipient);
 
     try (MockedStatic<FileService> fileServiceMock = Mockito.mockStatic(FileService.class)) {
       fileServiceMock.when(FileService::loadDataBase).thenReturn(users);
@@ -132,8 +125,6 @@ class MessageServiceTest {
   @DisplayName("Get unread messages for non existing user should throw UserInboxIsFullException")
   void shouldThrowUserNotFoundExceptionWhenUserNotExist()
       throws IOException, UserNotFoundException {
-
-    Map<String, User> users = new HashMap<>();
 
     try (MockedStatic<FileService> fileServiceMock = Mockito.mockStatic(FileService.class)) {
       fileServiceMock.when(FileService::loadDataBase).thenReturn(users);
