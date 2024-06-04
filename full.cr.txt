@@ -11,58 +11,57 @@ import java.util.Scanner;
 @Log4j2
 public class Client {
 
-    private static final Scanner SCANNER = new Scanner(System.in);
-    private static final String CLIENT_IP = "127.0.0.1";
-    private static final int CLIENT_PORT = 6666;
-    private final ClientNetworkHandler clientNetworkHandler = new ClientNetworkHandler();
+  private static final Scanner SCANNER = new Scanner(System.in);
+  private static final String CLIENT_IP = "127.0.0.1";
+  private static final int CLIENT_PORT = 6666;
+  private final ClientNetworkHandler clientNetworkHandler = new ClientNetworkHandler();
 
-    public static void main(String[] args) {
-        Client client = new Client();
-        client.communicateServer();
+  public static void main(String[] args) {
+    Client client = new Client();
+    client.communicateServer();
+  }
+
+  public Client() {
+    try {
+      clientNetworkHandler.connectToServer(CLIENT_IP, CLIENT_PORT);
+    } catch (IOException e) {
+      log.error("Failed to connect to server at {}:{}", CLIENT_IP, CLIENT_PORT, e);
+      log.info("Application is shutting down...");
+      System.exit(1);
     }
+  }
 
-    public Client() {
-        try {
-            clientNetworkHandler.connectToServer(CLIENT_IP, CLIENT_PORT);
-        } catch (IOException e) {
-            log.error("Failed to connect to server at {}:{}", CLIENT_IP, CLIENT_PORT, e);
-            log.info("Application is shutting down...");
-            System.exit(1);
+  private void communicateServer() {
+    while (!clientNetworkHandler.getSocket().isClosed()) {
+      try {
+        handleServerResponse();
+        if (SCANNER.hasNextLine()) {
+          String input = SCANNER.nextLine();
+          handleUserInput(input);
         }
+      } catch (IOException e) {
+        log.error("Communication error", e);
+      }
     }
+  }
 
-    private void communicateServer() {
-        while (!clientNetworkHandler.getSocket().isClosed()) {
-            try {
-                handleServerResponse();
-                if (SCANNER.hasNextLine()) {
-                    String input = SCANNER.nextLine();
-                    handleUserInput(input);
-                }
-            } catch (IOException e) {
-                log.error("Communication error", e);
-            }
-        }
-    }
+  private void handleServerResponse() throws IOException {
+    do {
+      String responseOpt = clientNetworkHandler.receiveResponse();
+      clientNetworkHandler.printServerResponse(responseOpt);
+    } while (clientNetworkHandler.hasResponse());
+  }
 
-    private void handleServerResponse() throws IOException {
-        do {
-            String responseOpt = clientNetworkHandler.receiveResponse();
-            clientNetworkHandler.printServerResponse(responseOpt);
-        } while (clientNetworkHandler.hasResponse());
+  private void handleUserInput(String input) throws IOException {
+    clientNetworkHandler.sendRequest(input);
+    if (input.equalsIgnoreCase("stop")) {
+      String responseOpt = clientNetworkHandler.receiveResponse();
+      clientNetworkHandler.printServerResponse(responseOpt);
+      clientNetworkHandler.closeConnection();
+      SCANNER.close();
     }
-
-    private void handleUserInput(String input) throws IOException {
-        clientNetworkHandler.sendRequest(input);
-        if (input.equalsIgnoreCase("stop")) {
-            String responseOpt = clientNetworkHandler.receiveResponse();
-            clientNetworkHandler.printServerResponse(responseOpt);
-            clientNetworkHandler.closeConnection();
-            SCANNER.close();
-        }
-    }
+  }
 }
-
 ====================
 
 ====================
@@ -85,63 +84,139 @@ import java.net.Socket;
 @Getter
 public class ClientNetworkHandler {
 
-    private Socket socket;
-    private PrintWriter out;
-    private BufferedReader in;
-    private final ObjectMapper mapper = new ObjectMapper();
+  private Socket socket;
+  private PrintWriter out;
+  private BufferedReader in;
+  private final ObjectMapper mapper = new ObjectMapper();
 
-    public void connectToServer(String ip, int port) throws IOException {
-        socket = new Socket(ip, port);
-        out = new PrintWriter(socket.getOutputStream(), true);
-        in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        log.info("Connected to server at {}:{}", ip, port);
+  public void connectToServer(String ip, int port) throws IOException {
+    socket = new Socket(ip, port);
+    out = new PrintWriter(socket.getOutputStream(), true);
+    in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+    log.info("Connected to server at {}:{}", ip, port);
+  }
+
+  public void sendRequest(String request) {
+    out.println(request);
+  }
+
+  public String receiveResponse() throws IOException {
+    return in.readLine();
+  }
+
+  public boolean hasResponse() throws IOException {
+    return in.ready();
+  }
+
+  public void closeConnection() {
+    try {
+      socket.close();
+    } catch (IOException e) {
+      log.error("Error closing socket", e);
+    }
+    closeResources();
+    log.info("Disconnected from server");
+  }
+
+  public void printServerResponse(String jsonResp) {
+    try {
+      JsonNode rootNode = mapper.readTree(jsonResp);
+      String prettyString = rootNode.toPrettyString();
+      log.info(prettyString);
+    } catch (IOException e) {
+      log.error("Error processing JSON response", e);
+    }
+  }
+
+  private void closeResources() {
+    try {
+      if (out != null) {
+        out.close();
+      }
+      if (in != null) {
+        in.close();
+      }
+    } catch (IOException e) {
+      log.error("Failed to close resources", e);
+    }
+  }
+}
+====================
+
+====================
+FILE: .\client-server\src\main\java\org\zwierzchowski\marcin\exception\InvalidCredentialsFormatException.java
+
+package org.zwierzchowski.marcin.exception;
+
+public class InvalidCredentialsFormatException extends Exception {
+    public InvalidCredentialsFormatException(String message) {
+        super(message);
+    }
+}
+====================
+
+====================
+FILE: .\client-server\src\main\java\org\zwierzchowski\marcin\exception\InvalidMessageException.java
+
+package org.zwierzchowski.marcin.exception;
+
+public class InvalidMessageException extends Exception {
+    public InvalidMessageException(String message) {
+        super(message);
+    }
+}
+====================
+
+====================
+FILE: .\client-server\src\main\java\org\zwierzchowski\marcin\exception\InvalidPasswordException.java
+
+package org.zwierzchowski.marcin.exception;
+
+public class InvalidPasswordException extends Exception {
+
+  public InvalidPasswordException(String message) {
+    super(message);
+  }
+}
+====================
+
+====================
+FILE: .\client-server\src\main\java\org\zwierzchowski\marcin\exception\UserInboxIsFullException.java
+
+package org.zwierzchowski.marcin.exception;
+
+public class UserInboxIsFullException extends Exception {
+  private String username;
+
+  public UserInboxIsFullException(String message, String username) {
+    super(message);
+    this.username = username;
+  }
+
+  @Override
+  public String getMessage() {
+    return "Recipient '" + username + "' inbox is full";
+  }
+}
+====================
+
+====================
+FILE: .\client-server\src\main\java\org\zwierzchowski\marcin\exception\UserNotFoundException.java
+
+package org.zwierzchowski.marcin.exception;
+
+public class UserNotFoundException extends Exception {
+    private String username;
+
+    public UserNotFoundException(String message, String username) {
+        super(message);
+        this.username = username;
     }
 
-    public void sendRequest(String request) {
-        out.println(request);
+    @Override
+    public String getMessage() {
+        return "User '" + username + "' not found";
     }
-
-    public String receiveResponse() throws IOException {
-        return in.readLine();
-    }
-
-    public boolean hasResponse() throws IOException {
-        return in.ready();
-    }
-
-    public void closeConnection() {
-        try {
-            socket.close();
-        } catch (IOException e) {
-            log.error("Error closing socket", e);
-        }
-        closeResources();
-        log.info("Disconnected from server");
-    }
-
-    public void printServerResponse(String jsonResp) {
-        try {
-            JsonNode rootNode = mapper.readTree(jsonResp);
-            String prettyString = rootNode.toPrettyString();
-            log.info(prettyString);
-        } catch (IOException e) {
-            log.error("Error processing JSON response", e);
-        }
-    }
-
-    private void closeResources() {
-        try {
-            if (out != null) {
-                out.close();
-            }
-            if (in != null) {
-                in.close();
-            }
-        } catch (IOException e) {
-            log.error("Failed to close resources", e);
-        }
-    }
-
 }
 ====================
 
@@ -163,27 +238,30 @@ import java.util.Date;
 @Setter
 public class Message {
 
-    @JsonProperty("content")
-    private String content;
-    @JsonProperty("sender")
-    private String sender;
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd@HH:mm:ss")
-    private Date createdDate;
-    @JsonProperty("status")
-    private Status status;
+  @JsonProperty("content")
+  private String content;
 
-    @JsonCreator
-    public Message(@JsonProperty("content") String content, @JsonProperty("sender") String sender) {
-        this.content = content;
-        this.sender = sender;
-        this.createdDate = Date.from(Instant.now());
-        this.status = Status.UNREAD;
-    }
+  @JsonProperty("sender")
+  private String sender;
 
-    public enum Status {
-        READ,
-        UNREAD
-    }
+  @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd@HH:mm:ss")
+  private Date createdDate;
+
+  @JsonProperty("status")
+  private Status status;
+
+  @JsonCreator
+  public Message(@JsonProperty("content") String content, @JsonProperty("sender") String sender) {
+    this.content = content;
+    this.sender = sender;
+    this.createdDate = Date.from(Instant.now());
+    this.status = Status.UNREAD;
+  }
+
+  public enum Status {
+    READ,
+    UNREAD
+  }
 }
 ====================
 
@@ -192,6 +270,8 @@ FILE: .\client-server\src\main\java\org\zwierzchowski\marcin\message\MessageServ
 
 package org.zwierzchowski.marcin.message;
 
+import org.zwierzchowski.marcin.exception.UserInboxIsFullException;
+import org.zwierzchowski.marcin.exception.UserNotFoundException;
 import org.zwierzchowski.marcin.user.User;
 import org.zwierzchowski.marcin.utils.FileService;
 
@@ -202,55 +282,55 @@ import java.util.Map;
 
 public class MessageService {
 
-    private static final int MAX_UNREAD_MESSAGES = 4;
+  private static final int MAX_UNREAD_MESSAGES = 4;
 
-    public String sendMessage(String recipent, String content, String sender) throws IOException {
+  public void sendMessage(String recipient, String content, String sender)
+      throws UserNotFoundException, UserInboxIsFullException, IOException {
+    Message message = new Message(content, sender);
+    Map<String, User> users = FileService.loadDataBase();
 
-        Message message = new Message(content, sender);
-        Map<String, User> users = FileService.loadDataBase();
-
-        if (users.containsKey(recipent)) {
-            User user = users.get(recipent);
-
-            if (!checkUserInboxIsFull(user.getMessages())) {
-                user.getMessages().add(message);
-                FileService.saveDataBase(users);
-                return "Message send";
-            } else {
-                return "Message not send, recipient inbox is full";
-            }
-        } else {
-            return "Recipient not existing";
-        }
+    if (!users.containsKey(recipient)) {
+      throw new UserNotFoundException("Recipient not found", recipient);
     }
 
-    public List<Message> getUnreadMessages(String username) throws IOException {
+    User user = users.get(recipient);
 
-        Map<String, User> users = FileService.loadDataBase();
-        User user = users.get(username);
-        List<Message> messages = user.getMessages();
-        List<Message> unreadMessages = new ArrayList<>();
-        if (!messages.isEmpty()) {
-            for (Message m : messages) {
-                if (m.getStatus().equals(Message.Status.UNREAD)) {
-                    unreadMessages.add(m);
-                    m.setStatus(Message.Status.READ);
-                }
-            }
-        }
-        FileService.saveDataBase(users);
-        return unreadMessages;
+    if (checkUserInboxIsFull(user.getMessages())) {
+      throw new UserInboxIsFullException("Recipient inbox is full", recipient);
     }
 
-    private boolean checkUserInboxIsFull(List<Message> messages) {
-        int countUnread = 0;
-        for (Message m : messages) {
-            if (m.getStatus().equals(Message.Status.UNREAD)) {
-                countUnread++;
-            }
-        }
-        return countUnread > MAX_UNREAD_MESSAGES;
+    user.addMessage(message);
+    FileService.saveDataBase(users);
+  }
+
+  public List<Message> getUnreadMessages(String username)
+      throws IOException, UserNotFoundException {
+
+    Map<String, User> users = FileService.loadDataBase();
+    if (!users.containsKey(username)) {
+      throw new UserNotFoundException("Recipient not found", username);
     }
+    User user = users.get(username);
+    List<Message> messages = user.getMessages();
+    List<Message> unreadMessages = new ArrayList<>();
+    if (!messages.isEmpty()) {
+      for (Message m : messages) {
+        if (m.getStatus().equals(Message.Status.UNREAD)) {
+          unreadMessages.add(m);
+          m.setStatus(Message.Status.READ);
+        }
+      }
+    }
+
+    FileService.saveDataBase(users);
+    return unreadMessages;
+  }
+
+  private boolean checkUserInboxIsFull(List<Message> messages) {
+    long countUnread =
+        messages.stream().filter(m -> m.getStatus().equals(Message.Status.UNREAD)).count();
+    return countUnread > MAX_UNREAD_MESSAGES;
+  }
 }
 ====================
 
@@ -276,204 +356,298 @@ import java.util.List;
 @Log4j2
 public class Server {
 
-    private ServerSocket serverSocket;
-    private Instant startTime;
-    private ServerData serverData;
-    private UserDataService userDataService;
-    private Session session = new Session();
-    private ServerResponse response = new ServerResponse();
-    private ServerNetworkHandler serverNetworkHandler;
-    private MessageService messageService = new MessageService();
+  private ServerSocket serverSocket;
+  private ServerData serverData;
+  private ServerCommandService serverCommandService;
+  private Session session = new Session();
+  private ServerResponse response = new ServerResponse();
+  private ServerNetworkHandler serverNetworkHandler;
 
-    public Server(int port) {
-        try {
-            serverSocket = new ServerSocket(port);
-        } catch (IOException e) {
-            log.error("Error creating server", e);
-            log.info("Application is shutting down...");
-            System.exit(1);
+  public Server(int port) {
+    try {
+      serverSocket = new ServerSocket(port);
+    } catch (IOException e) {
+      log.error("Error creating server", e);
+      log.info("Application is shutting down...");
+      System.exit(1);
+    }
+    serverData = new ServerData();
+    serverNetworkHandler = new ServerNetworkHandler(serverSocket);
+    serverCommandService = new ServerCommandService(serverNetworkHandler, session, serverData);
+    log.info("Server started on port {}", port);
+  }
+
+  public static void main(String[] args) {
+    Server server = new Server(6666);
+    server.start();
+  }
+
+  public void start() {
+    try {
+      serverNetworkHandler.acceptConnection();
+    } catch (IOException e) {
+      log.error("Failed to connect client", e);
+      System.exit(1);
+    }
+    handleClient();
+  }
+
+  private void handleClient() {
+    try {
+      String clientRequest;
+      serverNetworkHandler.sendMessage(serverCommandService.printOptions());
+
+      while ((clientRequest = serverNetworkHandler.receiveMessage()) != null) {
+        log.info("Client request: {}", clientRequest);
+
+        String serverResponse = serverCommandService.handleRequest(clientRequest);
+        if ("STOP_SERVER".equals(serverResponse)) {
+          break;
         }
-        serverData = new ServerData();
-        userDataService = new UserDataService();
-        startTime = Instant.now();
-        serverNetworkHandler = new ServerNetworkHandler(serverSocket);
-        log.info("Server started on port {}", port);
+        serverNetworkHandler.sendMessage(serverResponse);
+        serverNetworkHandler.sendMessage(serverCommandService.printOptions());
+      }
+    } catch (IOException e) {
+      log.error("Error handling client", e);
+    } finally {
+      serverNetworkHandler.close();
     }
+  }
+}
+====================
 
-    public static void main(String[] args) {
-        Server server = new Server(6666);
-        server.start();
+====================
+FILE: .\client-server\src\main\java\org\zwierzchowski\marcin\server\ServerCommandService.java
+
+package org.zwierzchowski.marcin.server;
+
+import static org.zwierzchowski.marcin.server.ServerCommandService.Command.*;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import java.io.IOException;
+import java.util.List;
+import lombok.extern.log4j.Log4j2;
+import org.zwierzchowski.marcin.exception.*;
+import org.zwierzchowski.marcin.message.Message;
+import org.zwierzchowski.marcin.message.MessageService;
+import org.zwierzchowski.marcin.user.User;
+import org.zwierzchowski.marcin.user.UserDataService;
+import org.zwierzchowski.marcin.utils.CredentialsValidator;
+import org.zwierzchowski.marcin.utils.MessageValidator;
+
+@Log4j2
+public class ServerCommandService {
+
+  private UserDataService userDataService = new UserDataService();
+  private MessageService messageService = new MessageService();
+  private ServerResponse response = new ServerResponse();
+  private ServerNetworkHandler serverNetworkHandler;
+  private Session session;
+  private ServerData serverData;
+
+  public ServerCommandService(
+      ServerNetworkHandler serverNetworkHandler, Session session, ServerData serverData) {
+    this.serverNetworkHandler = serverNetworkHandler;
+    this.session = session;
+    this.serverData = serverData;
+  }
+
+  public String handleRequest(String clientRequest) throws JsonProcessingException {
+
+    Command command = fromString(clientRequest);
+    try {
+      return switch (command) {
+        case REGISTER -> handleRegistration();
+        case LOGIN -> handleUserLogin();
+        case LOGOUT -> handleUserLogout();
+        case DELETE -> handleUserDelete();
+        case SEND -> handleSendMessage();
+        case READ -> handleReadMessages();
+        case STOP -> handleStopServer();
+        case UPTIME -> response.calculateUptime(serverData.getStartTime());
+        case HELP -> response.printServerCommands(serverData.getCommandsInfo());
+        case INFO -> response.printServerInfo(serverData.getSeverInfo());
+        case UNKNOWN -> response.printText("Command unknown");
+      };
+    } catch (JsonProcessingException e) {
+      log.error("JSON processing error", e);
+      return response.printError(e.getMessage());
+    } catch (IOException e) {
+      log.error("IO error", e);
+      return response.printError(e.getMessage());
+    } catch (InvalidCredentialsFormatException e) {
+      log.error("Invalid Credentials format", e);
+      return response.printError(e.getMessage());
+    } catch (UserNotFoundException | InvalidPasswordException e) {
+      log.error("Invalid user credentials", e);
+      return response.printError(e.getMessage());
     }
+  }
 
-    public void start() {
-        try {
-            serverNetworkHandler.acceptConnection();
-        } catch (IOException e) {
-            log.error("Failed to connect client", e);
-            System.exit(1);
-        }
-        handleClient();
+  private String handleRegistration() throws IOException, InvalidCredentialsFormatException {
+    serverNetworkHandler.sendMessage(response.printText("Please provide username"));
+    String username = serverNetworkHandler.receiveMessage();
+    CredentialsValidator.validateUsername(username);
+
+    serverNetworkHandler.sendMessage(response.printText("Please provide password"));
+    String password = serverNetworkHandler.receiveMessage();
+    CredentialsValidator.validatePassword(password);
+
+    serverNetworkHandler.sendMessage(response.printText("Please provide user role"));
+    String role = serverNetworkHandler.receiveMessage();
+    CredentialsValidator.validateRole(role);
+
+    User user = userDataService.addUser(username, password, role);
+
+    return response.printText("User: " + user.getUsername() + " successfully registered");
+  }
+
+  private String handleUserLogin()
+      throws IOException, UserNotFoundException, InvalidPasswordException {
+    serverNetworkHandler.sendMessage(response.printText("Please provide username"));
+    String username = serverNetworkHandler.receiveMessage();
+
+    serverNetworkHandler.sendMessage(response.printText("Please provide password"));
+    String password = serverNetworkHandler.receiveMessage();
+
+    userDataService.isValidCredentials(username, password);
+    User user = userDataService.getUser(username);
+    session.setLoggedInUser(user);
+    return response.printLoginStatus(true);
+  }
+
+  private String handleStopServer() throws JsonProcessingException {
+    serverNetworkHandler.sendMessage(response.printText("Shutting down server"));
+    return "STOP_SERVER";
+  }
+
+  private String handleUserLogout() throws JsonProcessingException {
+    if (!session.isUserLoggedIn()) {
+      return response.printText("No user logged in");
     }
+    session.logoutUser();
+    return response.printText("Logout successful");
+  }
 
-    private void handleClient() {
-        try {
-            String clientRequest;
-            serverNetworkHandler.sendMessage(response.printText("Type command"));
+  private String handleUserDelete() throws IOException, UserNotFoundException {
 
-            while ((clientRequest = serverNetworkHandler.receiveMessage()) != null) {
-                log.info("Client request: {}", clientRequest);
-
-                Command command = Command.fromString(clientRequest);
-                String serverResponse = handleRequest(command);
-                if ("STOP_SERVER".equals(serverResponse)) {
-                    break;
-                }
-                serverNetworkHandler.sendMessage(serverResponse);
-                serverNetworkHandler.sendMessage(response.printText("Type command"));
-            }
-        } catch (IOException e) {
-            log.error("Error handling client", e);
-        } finally {
-            serverNetworkHandler.close();
-        }
+    if (!session.isAdminLoggedIn()) {
+      return response.printText("Admin privileges are required to delete a user.");
     }
+    serverNetworkHandler.sendMessage(response.printText("Please provide username"));
+    String username = serverNetworkHandler.receiveMessage();
 
-    public String handleRequest(Command command) throws JsonProcessingException {
-        try {
-            return switch (command) {
-                case REGISTER -> handleRegistration();
-                case LOGIN -> handleUserLogin();
-                case LOGOUT -> handleUserLogout();
-                case DELETE -> handleUserDelete();
-                case SEND -> handleSendMessage();
-                case READ -> handleReadMessages();
-                case STOP -> handleStopServer();
-                case UPTIME -> response.calculateUptime(startTime);
-                case HELP -> response.printServerCommands(serverData.getCommandInfo());
-                case INFO -> response.printServerInfo(serverData.getServerInfo());
-                case UNKNOWN -> response.printText("Command unknown");
-            };
-        } catch (JsonProcessingException e) {
-            log.error("JSON processing error", e);
-            return response.printError(e.getMessage());
-        } catch (IOException e) {
-            log.error("IO error", e);
-            return response.printError(e.getMessage());
-        } catch (IllegalArgumentException e) {
-            log.error("{}", e.getMessage());
-            return response.printError(e.getMessage());
-        }
+    userDataService.deleteUser(username);
+    return response.printText("User successfully deleted");
+  }
+
+  private String handleSendMessage() throws JsonProcessingException {
+
+    try {
+      if (!session.isUserLoggedIn()) {
+        return response.printText("User needs to log in");
+      }
+      serverNetworkHandler.sendMessage(response.printText("Please provide recipient"));
+      String recipient = serverNetworkHandler.receiveMessage();
+
+      serverNetworkHandler.sendMessage(response.printText("Please provide  message"));
+      String content = serverNetworkHandler.receiveMessage();
+
+      MessageValidator.validateMessage(content);
+      String sender = session.getLoggedInUser().getUsername();
+      messageService.sendMessage(recipient, content, sender);
+      return response.printText("Message to send successfully");
+    } catch (IOException e) {
+      log.error("Error while communicating with server", e);
+      return response.printText("Error while communicating with server: " + e.getMessage());
+    } catch (InvalidMessageException e) {
+      log.error("Invalid Message format", e);
+      return response.printText("Invalid message: " + e.getMessage());
+    } catch (UserNotFoundException e) {
+      log.error("User not found", e);
+      return response.printText("Recipient not found: " + e.getMessage());
+    } catch (UserInboxIsFullException e) {
+      log.error("User inbox is full", e);
+      return response.printText("Message not send." + e.getMessage());
     }
+  }
 
-    private String handleRegistration() throws IOException {
-        serverNetworkHandler.sendMessage(response.printText("Please provide username"));
-        String username = serverNetworkHandler.receiveMessage();
-        CredentialsValidator.validateUsername(username);
-
-        serverNetworkHandler.sendMessage(response.printText("Please provide password"));
-        String password = serverNetworkHandler.receiveMessage();
-        CredentialsValidator.validatePassword(password);
-
-        serverNetworkHandler.sendMessage(response.printText("Please provide user role"));
-        String role = serverNetworkHandler.receiveMessage();
-        CredentialsValidator.validateRole(role);
-
-        User user = userDataService.addUser(username, password, role);
-
-        return response.printText("User: " + user.getUsername() + " successfully registered");
+  private String handleReadMessages() throws IOException {
+    try {
+      if (!session.isUserLoggedIn()) {
+        return response.printText("User needs to log in");
+      }
+      User user = session.getLoggedInUser();
+      List<Message> unreadMessages = messageService.getUnreadMessages(user.getUsername());
+      if (unreadMessages.isEmpty()) {
+        return response.printText("No unread messages");
+      }
+      return response.printUnreadMessages(unreadMessages);
+    } catch (UserNotFoundException e) {
+      log.error("User not found", e);
+      return response.printText("Recipient not found: " + e.getMessage());
     }
+  }
 
+  public String printOptions() throws JsonProcessingException {
+    if (session.isUserLoggedIn()) {
+      return printUserOptions();
+    } else if (session.isAdminLoggedIn()) {
+      return printAdminOptions();
+    } else return printWelcomeOptions();
+  }
 
-    private String handleUserLogin() throws IOException {
-        serverNetworkHandler.sendMessage(response.printText("Please provide username"));
-        String username = serverNetworkHandler.receiveMessage();
+  private String printWelcomeOptions() throws JsonProcessingException {
 
-        serverNetworkHandler.sendMessage(response.printText("Please provide password"));
-        String password = serverNetworkHandler.receiveMessage();
+    StringBuilder options = new StringBuilder();
+    options.append("Type command: ").append("LOGIN,").append("REGISTER.");
+    return response.printText(options.toString());
+  }
 
-        CredentialsValidator.validateUsername(username);
-        CredentialsValidator.validatePassword(password);
+  private String printAdminOptions() throws JsonProcessingException {
+    StringBuilder options = new StringBuilder();
+    options
+        .append("Type command: ")
+        .append("SEND, ")
+        .append("READ, ")
+        .append("DELETE, ")
+        .append("HELP, ")
+        .append("LOGOUT.");
+    return response.printText(options.toString());
+  }
 
-        if (userDataService.isValidCredentials(username, password)) {
-            User user = userDataService.getUser(username);
-            session.setLoggedInUser(user);
-            return response.printLoginStatus(true);
-        } else {
-            return response.printLoginStatus(false);
-        }
+  private String printUserOptions() throws JsonProcessingException {
+    StringBuilder options = new StringBuilder();
+    options
+        .append("Type command: ")
+        .append("SEND, ")
+        .append("READ, ")
+        .append("HELP, ")
+        .append("LOGOUT.");
+    return response.printText(options.toString());
+  }
+
+  public enum Command {
+    REGISTER,
+    LOGIN,
+    LOGOUT,
+    DELETE,
+    SEND,
+    READ,
+    UPTIME,
+    HELP,
+    INFO,
+    STOP,
+    UNKNOWN;
+
+    public static Command fromString(String command) {
+      try {
+        return Command.valueOf(command.toUpperCase());
+      } catch (IllegalArgumentException e) {
+        return UNKNOWN;
+      }
     }
-
-    private String handleStopServer() throws JsonProcessingException {
-        serverNetworkHandler.sendMessage(response.printText("Shutting down server"));
-        return "STOP_SERVER";
-    }
-
-    private String handleUserLogout() throws JsonProcessingException {
-        if (!session.isUserLoggedIn()) {
-            return response.printText("No user logged in");
-        }
-        session.logoutUser();
-        return response.printText("Logout successful");
-    }
-
-    private String handleUserDelete() throws IOException {
-
-        if (!session.isAdminLoggedIn()) {
-            return response.printText("Admin privileges are required to delete a user.");
-        }
-        serverNetworkHandler.sendMessage(response.printText("Please provide username"));
-        String username = serverNetworkHandler.receiveMessage();
-
-        if (userDataService.delete(username)) {
-            return response.printText("User successfully deleted");
-        } else {
-            return response.printText("Failed to delete user or user does not exist");
-        }
-    }
-
-    private String handleSendMessage() throws IOException {
-
-        if (!session.isUserLoggedIn()) {
-            return response.printText("User needs to log in");
-        }
-        String infoLog;
-        serverNetworkHandler.sendMessage(response.printText("Please provide recipient"));
-        String recipient = serverNetworkHandler.receiveMessage();
-
-        serverNetworkHandler.sendMessage(response.printText("Please provide  message"));
-        String content = serverNetworkHandler.receiveMessage();
-
-        MessageValidator.validateMessage(content);
-        String sender = session.getLoggedInUser().getUsername();
-        infoLog = messageService.sendMessage(recipient, content, sender);
-        return response.printText(infoLog);
-    }
-
-    private String handleReadMessages() throws IOException {
-
-        if (!session.isUserLoggedIn()) {
-            return response.printText("User needs to log in");
-        }
-        User user = session.getLoggedInUser();
-        List<Message> unreadMessages = messageService.getUnreadMessages(user.getUsername());
-        if (unreadMessages.isEmpty()) {
-            return response.printText("No unread messages");
-        }
-        return response.printUnreadMessages(unreadMessages);
-    }
-
-
-    public enum Command {
-        REGISTER, LOGIN, LOGOUT, DELETE, SEND, READ, UPTIME, HELP, INFO, STOP, UNKNOWN;
-
-        public static Command fromString(String command) {
-            try {
-                return Command.valueOf(command.toUpperCase());
-            } catch (IllegalArgumentException e) {
-                return UNKNOWN;
-            }
-        }
-    }
+  }
 }
 ====================
 
@@ -482,43 +656,42 @@ FILE: .\client-server\src\main\java\org\zwierzchowski\marcin\server\ServerData.j
 
 package org.zwierzchowski.marcin.server;
 
+import lombok.Getter;
+
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
+@Getter
 public class ServerData {
 
-    private final Map<String, String> commandsInfo = new HashMap<>();
-    private final Map<String, String> severInfo = new HashMap<>();
-    private static final String SERVER_VERSION = "0.2.0";
-    private static final String SERVER_CREATION_DATE = "19.04.2024";
+  private final Map<String, String> commandsInfo = new HashMap<>();
+  private final Map<String, String> severInfo = new HashMap<>();
+  private static final String SERVER_VERSION = "0.2.0";
+  private static final String SERVER_CREATION_DATE = "19.04.2024";
+  private Instant startTime;
 
-    public ServerData() {
-        initialize();
-    }
+  public ServerData() {
+    initialize();
+  }
 
-    private void initialize() {
-        commandsInfo.put("uptime", "Returns the server's uptime");
-        commandsInfo.put("info", "Returns the server's version number and creation date");
-        commandsInfo.put("help", "Returns a list of available commands with a brief description");
-        commandsInfo.put("stop", "stops both the server and the client simultaneously");
-        commandsInfo.put("register", "Add new user");
-        commandsInfo.put("login", "Login existing user");
-        commandsInfo.put("logout", "Logout user");
-        commandsInfo.put("delete", "Delete existing user. Required admin role");
-        commandsInfo.put("send", "Send message to another user");
-        commandsInfo.put("read", "Read unread messages in inbox");
+  private void initialize() {
+    commandsInfo.put("uptime", "Returns the server's uptime");
+    commandsInfo.put("info", "Returns the server's version number and creation date");
+    commandsInfo.put("help", "Returns a list of available commands with a brief description");
+    commandsInfo.put("stop", "stops both the server and the client simultaneously");
+    commandsInfo.put("register", "Add new user");
+    commandsInfo.put("login", "Login existing user");
+    commandsInfo.put("logout", "Logout user");
+    commandsInfo.put("delete", "Delete existing user. Required admin role");
+    commandsInfo.put("send", "Send message to another user");
+    commandsInfo.put("read", "Read unread messages in inbox");
 
-        severInfo.put("version", SERVER_VERSION);
-        severInfo.put("creation date", SERVER_CREATION_DATE);
-    }
+    severInfo.put("version", SERVER_VERSION);
+    severInfo.put("creation date", SERVER_CREATION_DATE);
 
-    public Map<String, String> getCommandInfo() {
-        return commandsInfo;
-    }
-
-    public Map<String, String> getServerInfo() {
-        return severInfo;
-    }
+    startTime = Instant.now();
+  }
 }
 ====================
 
@@ -539,63 +712,64 @@ import java.net.Socket;
 @Log4j2
 public class ServerNetworkHandler {
 
-    private Socket clientSocket;
-    private BufferedReader in;
-    private PrintWriter out;
-    private ServerSocket serverSocket;
+  private Socket clientSocket;
+  private BufferedReader in;
+  private PrintWriter out;
+  private ServerSocket serverSocket;
 
-    public ServerNetworkHandler(ServerSocket serverSocket) {
-        this.serverSocket = serverSocket;
-    }
+  public ServerNetworkHandler(ServerSocket serverSocket) {
+    this.serverSocket = serverSocket;
+  }
 
-    public void acceptConnection() throws IOException {
+  public void acceptConnection() throws IOException {
 
-        log.info("Waiting for a client...");
-        clientSocket = serverSocket.accept();
-        in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-        out = new PrintWriter(clientSocket.getOutputStream(), true);
-        log.info("Client connected");
-    }
-    public String receiveMessage() throws IOException {
-        return in.readLine();
-    }
+    log.info("Waiting for a client...");
+    clientSocket = serverSocket.accept();
+    in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+    out = new PrintWriter(clientSocket.getOutputStream(), true);
+    log.info("Client connected");
+  }
 
-    public void sendMessage(String message) {
-        out.println(message);
-    }
+  public String receiveMessage() throws IOException {
+    return in.readLine();
+  }
 
-    public void close() {
-        closeClientConnection();
-        closeServerSocket();
-    }
+  public void sendMessage(String message) {
+    out.println(message);
+  }
 
-    private void closeClientConnection() {
-        log.info("Closing client connection...");
-        try {
-            if (out != null) {
-                out.close();
-            }
-            if (in != null) {
-                in.close();
-            }
-            if (clientSocket != null && !clientSocket.isClosed()) {
-                clientSocket.close();
-            }
-        } catch (IOException e) {
-            log.error("Failed to close client connection resources: {}", e.getMessage());
-        }
-    }
+  public void close() {
+    closeClientConnection();
+    closeServerSocket();
+  }
 
-    private void closeServerSocket() {
-        log.info("Closing server socket...");
-        try {
-            if (serverSocket != null && !serverSocket.isClosed()) {
-                serverSocket.close();
-            }
-        } catch (IOException e) {
-            log.error("Error closing server socket: {}", e.getMessage());
-        }
+  private void closeClientConnection() {
+    log.info("Closing client connection...");
+    try {
+      if (out != null) {
+        out.close();
+      }
+      if (in != null) {
+        in.close();
+      }
+      if (clientSocket != null && !clientSocket.isClosed()) {
+        clientSocket.close();
+      }
+    } catch (IOException e) {
+      log.error("Failed to close client connection resources: {}", e.getMessage());
     }
+  }
+
+  private void closeServerSocket() {
+    log.info("Closing server socket...");
+    try {
+      if (serverSocket != null && !serverSocket.isClosed()) {
+        serverSocket.close();
+      }
+    } catch (IOException e) {
+      log.error("Error closing server socket: {}", e.getMessage());
+    }
+  }
 }
 ====================
 
@@ -606,6 +780,7 @@ package org.zwierzchowski.marcin.server;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import org.zwierzchowski.marcin.message.Message;
 import org.zwierzchowski.marcin.user.User;
 
@@ -618,57 +793,56 @@ import java.util.Map;
 
 public class ServerResponse {
 
-    private ObjectMapper mapper = new ObjectMapper();
+  private ObjectMapper mapper = new ObjectMapper();
 
-    public String calculateUptime(Instant startTime) throws JsonProcessingException {
-        Duration serverUptime = Duration.between(startTime, Instant.now());
-        Map<String, Integer> uptimeResponse = new HashMap<>();
-        uptimeResponse.put("hours", serverUptime.toHoursPart());
-        uptimeResponse.put("minutes", serverUptime.toMinutesPart());
-        uptimeResponse.put("seconds", serverUptime.toSecondsPart());
-        return mapper.writeValueAsString(uptimeResponse);
-    }
+  public String calculateUptime(Instant startTime) throws JsonProcessingException {
+    Duration serverUptime = Duration.between(startTime, Instant.now());
+    Map<String, Integer> uptimeResponse = new HashMap<>();
+    uptimeResponse.put("hours", serverUptime.toHoursPart());
+    uptimeResponse.put("minutes", serverUptime.toMinutesPart());
+    uptimeResponse.put("seconds", serverUptime.toSecondsPart());
+    return mapper.writeValueAsString(uptimeResponse);
+  }
 
-    public String printServerCommands(Map<String, String> commandsInfo) throws JsonProcessingException {
-        return mapper.writeValueAsString(commandsInfo);
-    }
+  public String printServerCommands(Map<String, String> commandsInfo)
+      throws JsonProcessingException {
+    return mapper.writeValueAsString(commandsInfo);
+  }
 
-    public String printServerInfo(Map<String, String> serverInfo) throws JsonProcessingException {
-        return mapper.writeValueAsString(serverInfo);
-    }
+  public String printServerInfo(Map<String, String> serverInfo) throws JsonProcessingException {
+    return mapper.writeValueAsString(serverInfo);
+  }
 
-    public String printText(String text) throws JsonProcessingException {
-        Map<String, String> message = new HashMap<>();
-        message.put("info", text);
-        return mapper.writeValueAsString(text);
-    }
+  public String printText(String text) throws JsonProcessingException {
+    return mapper.writeValueAsString(text);
+  }
 
-    public String printError(String text) throws JsonProcessingException {
-        Map<String, String> message = new HashMap<>();
-        message.put("error", text);
-        return mapper.writeValueAsString(message);
-    }
+  public String printError(String text) throws JsonProcessingException {
+    Map<String, String> message = new HashMap<>();
+    message.put("error", text);
+    return mapper.writeValueAsString(message);
+  }
 
-    public String printLoginStatus(boolean status) throws JsonProcessingException {
-        Map<String, String> response = new HashMap<>();
-        if (status) {
-            response.put("status", "success");
-            response.put("message", "User sucessfully logged in");
-        } else {
-            response.put("status", "failure");
-            response.put("message", "Incorrect username or password");
-        }
-        return mapper.writeValueAsString(response);
+  public String printLoginStatus(boolean status) throws JsonProcessingException {
+    Map<String, String> response = new HashMap<>();
+    if (status) {
+      response.put("status", "success");
+      response.put("message", "User sucessfully logged in");
+    } else {
+      response.put("status", "failure");
+      response.put("message", "Incorrect username or password");
     }
+    return mapper.writeValueAsString(response);
+  }
 
-    public String printUnreadMessages(List<Message> unreadMessages) throws JsonProcessingException {
-        Map<String, Message> messagesResponse = new LinkedHashMap<>();
-        for (int i = 0; i < unreadMessages.size(); i++) {
-            Message m = unreadMessages.get(i);
-            messagesResponse.put("Message " + (i + 1), m);
-        }
-        return mapper.writeValueAsString(messagesResponse);
+  public String printUnreadMessages(List<Message> unreadMessages) throws JsonProcessingException {
+    Map<String, Message> messagesResponse = new LinkedHashMap<>();
+    for (int i = 0; i < unreadMessages.size(); i++) {
+      Message m = unreadMessages.get(i);
+      messagesResponse.put("Message " + (i + 1), m);
     }
+    return mapper.writeValueAsString(messagesResponse);
+  }
 }
 ====================
 
@@ -685,19 +859,19 @@ import org.zwierzchowski.marcin.user.User;
 @Setter
 public class Session {
 
-    private User loggedInUser;
+  private User loggedInUser;
 
-    public boolean isUserLoggedIn() {
-        return loggedInUser != null;
-    }
+  public boolean isUserLoggedIn() {
+    return loggedInUser != null;
+  }
 
-    public boolean isAdminLoggedIn() {
-        return loggedInUser != null && loggedInUser.getRole().equals(User.Role.ADMIN);
-    }
+  public boolean isAdminLoggedIn() {
+    return loggedInUser != null && loggedInUser.getRole().equals(User.Role.ADMIN);
+  }
 
-    public void logoutUser() {
-        loggedInUser = null;
-    }
+  public void logoutUser() {
+    loggedInUser = null;
+  }
 }
 ====================
 
@@ -718,11 +892,11 @@ import java.util.ArrayList;
 @Setter
 @JsonTypeName("admin")
 public class Admin extends User {
-    @JsonCreator
-    public Admin(@JsonProperty("username") String username,
-                 @JsonProperty("password") String password) {
-        super(username, password, Role.ADMIN, new ArrayList<>());
-    }
+  @JsonCreator
+  public Admin(
+      @JsonProperty("username") String username, @JsonProperty("password") String password) {
+    super(username, password, Role.ADMIN, new ArrayList<>());
+  }
 }
 ====================
 
@@ -744,14 +918,12 @@ import java.util.ArrayList;
 @JsonTypeName("user")
 public class StandardUser extends User {
 
-    @JsonCreator
-    public StandardUser(@JsonProperty("username") String username,
-                        @JsonProperty("password") String password) {
-        super(username, password, Role.USER, new ArrayList<>());
-    }
-
+  @JsonCreator
+  public StandardUser(
+      @JsonProperty("username") String username, @JsonProperty("password") String password) {
+    super(username, password, Role.USER, new ArrayList<>());
+  }
 }
-
 ====================
 
 ====================
@@ -773,26 +945,35 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.PROPERTY;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = PROPERTY, property = "type")
 @JsonSubTypes({
-        @JsonSubTypes.Type(value = Admin.class, name = "admin"),
-        @JsonSubTypes.Type(value = StandardUser.class, name = "user")})
+  @JsonSubTypes.Type(value = Admin.class, name = "admin"),
+  @JsonSubTypes.Type(value = StandardUser.class, name = "user")
+})
 @Getter
 @Setter
 @AllArgsConstructor
 public abstract class User {
 
-    @JsonProperty("username")
-    private String username;
-    @JsonProperty("password")
-    private String password;
-    @Setter(AccessLevel.NONE)
-    @JsonProperty("role")
-    private Role role;
-    @JsonProperty("messages")
-    private List<Message> messages;
+  @JsonProperty("username")
+  private String username;
 
-    public enum Role {
-        USER, ADMIN
-    }
+  @JsonProperty("password")
+  private String password;
+
+  @Setter(AccessLevel.NONE)
+  @JsonProperty("role")
+  private Role role;
+
+  @JsonProperty("messages")
+  private List<Message> messages;
+
+  public enum Role {
+    USER,
+    ADMIN
+  }
+
+  public void addMessage(Message message) {
+    messages.add(message);
+  }
 }
 ====================
 
@@ -802,6 +983,9 @@ FILE: .\client-server\src\main\java\org\zwierzchowski\marcin\user\UserDataServic
 package org.zwierzchowski.marcin.user;
 
 import org.mindrot.jbcrypt.BCrypt;
+import org.zwierzchowski.marcin.exception.InvalidCredentialsFormatException;
+import org.zwierzchowski.marcin.exception.InvalidPasswordException;
+import org.zwierzchowski.marcin.exception.UserNotFoundException;
 import org.zwierzchowski.marcin.utils.FileService;
 
 import java.io.IOException;
@@ -809,45 +993,56 @@ import java.util.Map;
 
 public class UserDataService {
 
-    public User addUser(String username, String password, String role) throws IOException {
-        Map<String, User> users = FileService.loadDataBase();
-        String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
-        User newUser = switch (role.toLowerCase()) {
-            case "user" -> new StandardUser(username, hashedPassword);
-            case "admin" -> new Admin(username, hashedPassword);
-            default -> throw new IllegalStateException("Unexpected value: " + role);
+  public User addUser(String username, String password, String role)
+      throws IOException, InvalidCredentialsFormatException {
+    Map<String, User> users = FileService.loadDataBase();
+    String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
+    User newUser =
+        switch (role.toLowerCase()) {
+          case "user" -> new StandardUser(username, hashedPassword);
+          case "admin" -> new Admin(username, hashedPassword);
+          default -> throw new InvalidCredentialsFormatException("Unexpected value: " + role);
         };
 
-        users.put(username, newUser);
-        FileService.saveDataBase(users);
-        return newUser;
+    users.put(username, newUser);
+    FileService.saveDataBase(users);
+    return newUser;
+  }
+
+  public boolean isValidCredentials(String username, String password)
+      throws IOException, UserNotFoundException, InvalidPasswordException {
+    Map<String, User> users = FileService.loadDataBase();
+    if (!users.containsKey(username)) {
+      throw new UserNotFoundException("User not exist", username);
     }
 
-    public boolean isValidCredentials(String username, String password) throws IOException {
-        Map<String, User> users = FileService.loadDataBase();
-        if (users.containsKey(username)) {
-            User user = users.get(username);
-            return BCrypt.checkpw(password, user.getPassword());
-        }
-        return false;
+    User user = users.get(username);
+    if (!BCrypt.checkpw(password, user.getPassword())) {
+      throw new InvalidPasswordException("Invalid password");
     }
 
-    public User getUser(String username) throws IOException {
-        Map<String, User> users = FileService.loadDataBase();
-        return users.get(username);
-    }
+    return true;
+  }
 
-    public boolean delete(String username) throws IOException {
-
-        Map<String, User> users = FileService.loadDataBase();
-        if (users.containsKey(username)) {
-            users.remove(username);
-            FileService.saveDataBase(users);
-            return true;
-        } else {
-            return false;
-        }
+  public User getUser(String username) throws IOException, UserNotFoundException {
+    Map<String, User> users = FileService.loadDataBase();
+    User user = users.get(username);
+    if (user == null) {
+      throw new UserNotFoundException("User not find:", username);
     }
+    return user;
+  }
+
+  public void deleteUser(String username) throws IOException, UserNotFoundException {
+
+    Map<String, User> users = FileService.loadDataBase();
+    if (users.containsKey(username)) {
+      users.remove(username);
+      FileService.saveDataBase(users);
+    } else {
+      throw new UserNotFoundException("User not found", username);
+    }
+  }
 }
 ====================
 
@@ -856,42 +1051,42 @@ FILE: .\client-server\src\main\java\org\zwierzchowski\marcin\utils\CredentialsVa
 
 package org.zwierzchowski.marcin.utils;
 
+import org.zwierzchowski.marcin.exception.InvalidCredentialsFormatException;
 import org.zwierzchowski.marcin.user.User;
 
 import java.util.regex.Pattern;
 
 public class CredentialsValidator {
 
-    private static final String USERNAME_PATTERN = "^[A-Za-z]\\w{2,29}$";
-    private static final String PASSWORD_PATTERN = "^[A-Za-z]\\w{2,29}$";
+  private static final String USERNAME_PATTERN = "^[A-Za-z][A-Za-z0-9]{1,28}$";
+  private static final String PASSWORD_PATTERN = "^[A-Za-z]\\w{2,29}$";
 
-    private CredentialsValidator() {
-    }
+  private CredentialsValidator() {}
 
-    public static void validateUsername(String username) {
-        if (username.length() < 3 || !Pattern.matches(USERNAME_PATTERN, username)) {
-            throw new IllegalArgumentException("Invalid username format");
-        }
+  public static void validateUsername(String username) throws InvalidCredentialsFormatException {
+    if (!Pattern.matches(USERNAME_PATTERN, username)) {
+      throw new InvalidCredentialsFormatException("Invalid username format");
     }
+  }
 
-    public static void validatePassword(String password) {
-        if (password.length() < 3 || !Pattern.matches(PASSWORD_PATTERN, password)) {
-            throw new IllegalArgumentException("Invalid password format");
-        }
+  public static void validatePassword(String password) throws InvalidCredentialsFormatException {
+    if (!Pattern.matches(PASSWORD_PATTERN, password)) {
+      throw new InvalidCredentialsFormatException("Invalid password format");
     }
+  }
 
-    public static void validateRole(String role) {
-        boolean isValidRole = false;
-        for (User.Role r : User.Role.values()) {
-            if (r.name().equalsIgnoreCase(role)) {
-                isValidRole = true;
-                break;
-            }
-        }
-        if (!isValidRole) {
-            throw new IllegalArgumentException("Invalid role");
-        }
+  public static void validateRole(String role) throws InvalidCredentialsFormatException {
+    boolean isValidRole = false;
+    for (User.Role r : User.Role.values()) {
+      if (r.name().equalsIgnoreCase(role)) {
+        isValidRole = true;
+        break;
+      }
     }
+    if (!isValidRole) {
+      throw new InvalidCredentialsFormatException("Invalid role");
+    }
+  }
 }
 ====================
 
@@ -912,28 +1107,25 @@ import java.util.Map;
 
 public class FileService {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-    private static final String FILE_PATH = "./users.json";
+  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+  private static final String FILE_PATH = "./users.json";
 
-    private FileService() {
-    }
+  private FileService() {}
 
-    public static Map<String, User> loadDataBase() throws IOException {
-        File file = new File(FILE_PATH);
-        if (file.exists() && file.length() != 0) {
-            return OBJECT_MAPPER.readValue(file, new TypeReference<Map<String, User>>() {
-            });
-        } else {
-            return new HashMap<>();
-        }
+  public static Map<String, User> loadDataBase() throws IOException {
+    File file = new File(FILE_PATH);
+    if (file.exists() && file.length() != 0) {
+      return OBJECT_MAPPER.readValue(file, new TypeReference<Map<String, User>>() {});
+    } else {
+      return new HashMap<>();
     }
+  }
 
-    public static void saveDataBase(Map<String, User> users) throws IOException {
-        File file = new File(FILE_PATH);
-        OBJECT_MAPPER.enable(SerializationFeature.INDENT_OUTPUT);
-        OBJECT_MAPPER.writerFor(new TypeReference<Map<String, User>>() {
-        }).writeValue(file, users);
-    }
+  public static void saveDataBase(Map<String, User> users) throws IOException {
+    File file = new File(FILE_PATH);
+    OBJECT_MAPPER.enable(SerializationFeature.INDENT_OUTPUT);
+    OBJECT_MAPPER.writerFor(new TypeReference<Map<String, User>>() {}).writeValue(file, users);
+  }
 }
 ====================
 
@@ -942,18 +1134,19 @@ FILE: .\client-server\src\main\java\org\zwierzchowski\marcin\utils\MessageValida
 
 package org.zwierzchowski.marcin.utils;
 
+import org.zwierzchowski.marcin.exception.InvalidMessageException;
+
 public class MessageValidator {
 
-    private static final int MESSAGE_LENGTH = 255;
+  private static final int MESSAGE_LENGTH = 255;
 
-    private MessageValidator() {
-    }
+  private MessageValidator() {}
 
-    public static void validateMessage(String content) {
-        if (content == null || content.length() > MESSAGE_LENGTH) {
-            throw new IllegalArgumentException("Invalid message format");
-        }
+  public static void validateMessage(String content) throws InvalidMessageException {
+    if (content == null || content.length()  > MESSAGE_LENGTH || content.isEmpty()) {
+      throw new InvalidMessageException("Invalid message format");
     }
+  }
 }
 ====================
 

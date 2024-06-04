@@ -1,7 +1,10 @@
 package org.zwierzchowski.marcin.server;
 
+import static org.zwierzchowski.marcin.server.ServerCommandService.Command.*;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.SerializationFeature;
+import java.io.IOException;
+import java.util.List;
 import lombok.extern.log4j.Log4j2;
 import org.zwierzchowski.marcin.exception.*;
 import org.zwierzchowski.marcin.message.Message;
@@ -10,11 +13,6 @@ import org.zwierzchowski.marcin.user.User;
 import org.zwierzchowski.marcin.user.UserDataService;
 import org.zwierzchowski.marcin.utils.CredentialsValidator;
 import org.zwierzchowski.marcin.utils.MessageValidator;
-
-import java.io.IOException;
-import java.util.List;
-
-import static org.zwierzchowski.marcin.server.ServerCommandService.Command.*;
 
 @Log4j2
 public class ServerCommandService {
