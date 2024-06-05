@@ -20,12 +20,12 @@ import static org.junit.jupiter.api.Assertions.*;
 class UserDataServiceTest {
 
   private UserDataService userDataService;
-  Map<String, User> users;
-  User testUser;
-  String username;
-  String password;
-  String hashedPassword;
-  String role;
+  private Map<String, User> users;
+  private User testUser;
+  private String username;
+  private String password;
+  private String hashedPassword;
+  private String role;
 
   @BeforeEach
   void setUp() {

@@ -19,12 +19,12 @@ import org.zwierzchowski.marcin.utils.FileService;
 class MessageServiceTest {
 
   private MessageService messageService;
-  String recipient;
-  String content;
-  String sender;
-  User userRecipient;
-  User userSender;
-  Map<String, User> users;
+  private String recipient;
+  private String content;
+  private String sender;
+  private User userRecipient;
+  private User userSender;
+  private Map<String, User> users;
 
   @BeforeEach
   void setUp() {

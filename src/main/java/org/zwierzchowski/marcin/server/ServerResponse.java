@@ -15,7 +15,7 @@ import java.util.Map;
 
 public class ServerResponse {
 
-  private ObjectMapper mapper = new ObjectMapper();
+  private final ObjectMapper mapper = new ObjectMapper();
 
   public String calculateUptime(Instant startTime) throws JsonProcessingException {
     Duration serverUptime = Duration.between(startTime, Instant.now());
