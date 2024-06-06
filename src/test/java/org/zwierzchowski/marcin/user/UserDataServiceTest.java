@@ -45,8 +45,8 @@ class UserDataServiceTest {
 
     try (MockedStatic<FileService> fileServiceMock = Mockito.mockStatic(FileService.class)) {
       fileServiceMock.when(FileService::loadDataBase).thenReturn(users);
-
       User newUser = userDataService.addUser(username, password, role);
+
       assertNotNull(newUser);
       assertTrue(newUser instanceof StandardUser);
       assertEquals(username, newUser.getUsername());
@@ -62,8 +62,8 @@ class UserDataServiceTest {
 
     try (MockedStatic<FileService> fileServiceMock = Mockito.mockStatic(FileService.class)) {
       fileServiceMock.when(FileService::loadDataBase).thenReturn(users);
-
       User newUser = userDataService.addUser(username, password, role);
+
       assertNotNull(newUser);
       assertTrue(newUser instanceof Admin);
       assertEquals(username, newUser.getUsername());
@@ -73,7 +73,7 @@ class UserDataServiceTest {
 
   @Test
   @DisplayName("Should throw Invalid Credentials Exception when invalid role")
-  void shouldThrowInvalidCredentialsExceptionWhenInvalidRole() throws IOException {
+  void shouldThrowInvalidCredentialsExceptionWhenInvalidRole() {
 
     role = "invalidRole";
 
@@ -89,7 +89,7 @@ class UserDataServiceTest {
   @Test
   @DisplayName("Should return testUser when username is valid")
   void shouldReturnUserWhenValidUsername()
-      throws IOException, InvalidCredentialsFormatException, UserNotFoundException {
+      throws IOException, UserNotFoundException {
 
     users.put(username, testUser);
 
@@ -105,8 +105,7 @@ class UserDataServiceTest {
 
   @Test
   @DisplayName("Should throws UserNotFoundException when username is invalid")
-  void shouldThrowsUserNotFoundExceptionUserWhenInvalidUsername()
-      throws IOException, UserNotFoundException {
+  void shouldThrowsUserNotFoundExceptionUserWhenInvalidUsername() {
 
     users.put(username, testUser);
 
@@ -159,7 +158,7 @@ class UserDataServiceTest {
 
   @Test
   @DisplayName("Should throw InvalidPasswordException for invalid password")
-  void shouldThrowInvalidPasswordExceptionForInvalidPassword() throws IOException {
+  void shouldThrowInvalidPasswordExceptionForInvalidPassword() {
     users.put(username, testUser);
 
     try (MockedStatic<FileService> fileServiceMock = Mockito.mockStatic(FileService.class)) {

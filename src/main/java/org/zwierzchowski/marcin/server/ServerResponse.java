@@ -2,16 +2,13 @@ package org.zwierzchowski.marcin.server;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import org.zwierzchowski.marcin.message.Message;
-import org.zwierzchowski.marcin.user.User;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.zwierzchowski.marcin.message.Message;
 
 public class ServerResponse {
 

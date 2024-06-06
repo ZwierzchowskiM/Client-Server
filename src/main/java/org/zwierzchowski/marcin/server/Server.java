@@ -21,7 +21,6 @@ public class Server {
   private ServerData serverData;
   private ServerCommandService serverCommandService;
   private Session session = new Session();
-  private ServerResponse response = new ServerResponse();
   private ServerNetworkHandler serverNetworkHandler;
 
   public Server(int port) {

@@ -12,8 +12,6 @@ import java.util.Map;
 
 public class MessageService {
 
-  private static final int MAX_UNREAD_MESSAGES = 4;
-
   public void sendMessage(String recipient, String content, String sender)
       throws UserNotFoundException, UserInboxIsFullException, IOException {
     Message message = new Message(content, sender);
@@ -25,10 +23,9 @@ public class MessageService {
 
     User user = users.get(recipient);
 
-    if (checkUserInboxIsFull(user.getMessages())) {
+    if (user.isUserInboxFull()) {
       throw new UserInboxIsFullException("Recipient inbox is full", recipient);
     }
-
     user.addMessage(message);
     FileService.saveDataBase(users);
   }
@@ -54,11 +51,5 @@ public class MessageService {
 
     FileService.saveDataBase(users);
     return unreadMessages;
-  }
-
-  private boolean checkUserInboxIsFull(List<Message> messages) {
-    long countUnread =
-        messages.stream().filter(m -> m.getStatus().equals(Message.Status.UNREAD)).count();
-    return countUnread > MAX_UNREAD_MESSAGES;
   }
 }
