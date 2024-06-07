@@ -282,8 +282,6 @@ import java.util.Map;
 
 public class MessageService {
 
-  private static final int MAX_UNREAD_MESSAGES = 4;
-
   public void sendMessage(String recipient, String content, String sender)
       throws UserNotFoundException, UserInboxIsFullException, IOException {
     Message message = new Message(content, sender);
@@ -295,10 +293,9 @@ public class MessageService {
 
     User user = users.get(recipient);
 
-    if (checkUserInboxIsFull(user.getMessages())) {
+    if (user.isUserInboxFull()) {
       throw new UserInboxIsFullException("Recipient inbox is full", recipient);
     }
-
     user.addMessage(message);
     FileService.saveDataBase(users);
   }
@@ -324,12 +321,6 @@ public class MessageService {
 
     FileService.saveDataBase(users);
     return unreadMessages;
-  }
-
-  private boolean checkUserInboxIsFull(List<Message> messages) {
-    long countUnread =
-        messages.stream().filter(m -> m.getStatus().equals(Message.Status.UNREAD)).count();
-    return countUnread > MAX_UNREAD_MESSAGES;
   }
 }
 ====================
@@ -360,7 +351,6 @@ public class Server {
   private ServerData serverData;
   private ServerCommandService serverCommandService;
   private Session session = new Session();
-  private ServerResponse response = new ServerResponse();
   private ServerNetworkHandler serverNetworkHandler;
 
   public Server(int port) {
@@ -780,20 +770,17 @@ package org.zwierzchowski.marcin.server;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import org.zwierzchowski.marcin.message.Message;
-import org.zwierzchowski.marcin.user.User;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.zwierzchowski.marcin.message.Message;
 
 public class ServerResponse {
 
-  private ObjectMapper mapper = new ObjectMapper();
+  private final ObjectMapper mapper = new ObjectMapper();
 
   public String calculateUptime(Instant startTime) throws JsonProcessingException {
     Duration serverUptime = Duration.between(startTime, Instant.now());
@@ -885,18 +872,22 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Getter;
 import lombok.Setter;
+import org.zwierzchowski.marcin.message.Message;
 
 import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
 @JsonTypeName("admin")
 public class Admin extends User {
+
+
+
   @JsonCreator
   public Admin(
       @JsonProperty("username") String username, @JsonProperty("password") String password) {
-    super(username, password, Role.ADMIN, new ArrayList<>());
-  }
+    super(username, password, Role.ADMIN, new ArrayList<>(), 100);}
 }
 ====================
 
@@ -910,19 +901,25 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Getter;
 import lombok.Setter;
+import org.zwierzchowski.marcin.message.Message;
 
 import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
 @JsonTypeName("user")
 public class StandardUser extends User {
 
+
+
   @JsonCreator
   public StandardUser(
       @JsonProperty("username") String username, @JsonProperty("password") String password) {
-    super(username, password, Role.USER, new ArrayList<>());
+    super(username, password, Role.USER, new ArrayList<>(), 4);
+
   }
+
 }
 ====================
 
@@ -966,6 +963,8 @@ public abstract class User {
   @JsonProperty("messages")
   private List<Message> messages;
 
+  private int maxUnreadMessages;
+
   public enum Role {
     USER,
     ADMIN
@@ -973,6 +972,12 @@ public abstract class User {
 
   public void addMessage(Message message) {
     messages.add(message);
+  }
+
+  public boolean isUserInboxFull() {
+    long countUnread =
+            messages.stream().filter(m -> m.getStatus().equals(Message.Status.UNREAD)).count();
+    return countUnread > maxUnreadMessages;
   }
 }
 ====================
