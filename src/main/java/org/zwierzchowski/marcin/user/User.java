@@ -35,20 +35,14 @@ public abstract class User {
   @JsonProperty("messages")
   private List<Message> messages;
 
-  private int maxUnreadMessages;
-
-  public enum Role {
-    USER,
-    ADMIN
-  }
-
   public void addMessage(Message message) {
     messages.add(message);
   }
 
-  public boolean isUserInboxFull() {
-    long countUnread =
-            messages.stream().filter(m -> m.getStatus().equals(Message.Status.UNREAD)).count();
-    return countUnread > maxUnreadMessages;
+  public abstract boolean isUserInboxFull();
+
+  public enum Role {
+    USER,
+    ADMIN
   }
 }
