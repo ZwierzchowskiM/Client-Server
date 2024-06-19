@@ -1,16 +1,14 @@
 package org.zwierzchowski.marcin.message;
 
-import org.zwierzchowski.marcin.exception.UserInboxIsFullException;
-import org.zwierzchowski.marcin.exception.UserNotFoundException;
-import org.zwierzchowski.marcin.user.User;
-import org.zwierzchowski.marcin.user.UserDataService;
-import org.zwierzchowski.marcin.user.UserRepository;
-import org.zwierzchowski.marcin.utils.FileService;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import org.zwierzchowski.marcin.exception.UserInboxIsFullException;
+import org.zwierzchowski.marcin.exception.UserNotFoundException;
+import org.zwierzchowski.marcin.user.User;
+import org.zwierzchowski.marcin.user.UserDataService;
+import org.zwierzchowski.marcin.utils.FileService;
 
 public class MessageService {
 

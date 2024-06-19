@@ -1,11 +1,8 @@
 package org.zwierzchowski.marcin.message;
 
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.util.Date;
-
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.Setter;
 

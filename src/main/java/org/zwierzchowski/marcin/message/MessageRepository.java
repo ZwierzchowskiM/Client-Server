@@ -3,7 +3,6 @@ package org.zwierzchowski.marcin.message;
 import java.sql.Connection;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import org.jooq.DSLContext;
 import org.jooq.Record;

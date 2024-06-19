@@ -1,21 +1,12 @@
 package org.zwierzchowski.marcin.user;
 
-import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.PROPERTY;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import org.zwierzchowski.marcin.message.Message;
 
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = PROPERTY, property = "type")
-@JsonSubTypes({
-  @JsonSubTypes.Type(value = Admin.class, name = "admin"),
-  @JsonSubTypes.Type(value = StandardUser.class, name = "user")
-})
 @Getter
 @Setter
 @AllArgsConstructor

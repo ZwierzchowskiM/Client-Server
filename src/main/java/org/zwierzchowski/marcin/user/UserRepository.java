@@ -6,6 +6,7 @@ import org.jooq.Record;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
 import org.zwierzchowski.marcin.db.tables.Users;
+import org.zwierzchowski.marcin.exception.InvalidCredentialsFormatException;
 import org.zwierzchowski.marcin.exception.UserNotFoundException;
 import org.zwierzchowski.marcin.utils.DataBaseManager;
 
@@ -29,7 +30,8 @@ public class UserRepository {
         .execute();
   }
 
-  public User finByUsername(String username) throws UserNotFoundException {
+  public User finByUsername(String username)
+      throws UserNotFoundException {
 
     Record userRecord =
         context.select().from(Users.USERS).where(Users.USERS.USERNAME.eq(username)).fetchOne();
@@ -44,10 +46,10 @@ public class UserRepository {
     int id = userRecord.getValue(Users.USERS.ID, Integer.class);
 
     User user =
-        switch (role) {
+        switch (role.toLowerCase()) {
           case "user" -> new StandardUser(id, usernameDb, password, null);
           case "admin" -> new Admin(id, usernameDb, password, null);
-          default -> throw new UserNotFoundException("Unexpected value: ", username);
+          default -> throw new IllegalArgumentException("Unexpected value: " + role);
         };
     return user;
   }

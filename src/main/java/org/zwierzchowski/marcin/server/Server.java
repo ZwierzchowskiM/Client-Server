@@ -1,18 +1,8 @@
 package org.zwierzchowski.marcin.server;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import lombok.extern.log4j.Log4j2;
-import org.zwierzchowski.marcin.message.Message;
-import org.zwierzchowski.marcin.message.MessageService;
-import org.zwierzchowski.marcin.user.User;
-import org.zwierzchowski.marcin.user.UserDataService;
-import org.zwierzchowski.marcin.utils.CredentialsValidator;
-import org.zwierzchowski.marcin.utils.MessageValidator;
-
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.time.Instant;
-import java.util.List;
+import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 public class Server {

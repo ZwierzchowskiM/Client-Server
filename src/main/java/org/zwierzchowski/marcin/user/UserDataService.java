@@ -33,7 +33,7 @@ public class UserDataService {
   }
 
   public boolean isValidCredentials(String username, String password)
-      throws UserNotFoundException, InvalidPasswordException {
+      throws UserNotFoundException, InvalidPasswordException, IllegalArgumentException {
 
     User user = userRepository.finByUsername(username);
     if (user == null) {
