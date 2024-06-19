@@ -1,24 +1,23 @@
 package org.zwierzchowski.marcin.user;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.ArrayList;
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import org.zwierzchowski.marcin.message.Message;
 
 @Getter
 @Setter
-@JsonTypeName("user")
 public class StandardUser extends User {
 
-  private final int maxUnreadMessages = 4;
+  private static final int MAX_UNREAD_MESSAGES = 4;
 
-  @JsonCreator
-  public StandardUser(
-      @JsonProperty("username") String username, @JsonProperty("password") String password) {
+  public StandardUser(String username, String password) {
     super(username, password, Role.USER, new ArrayList<>());
+  }
+
+  public StandardUser(int id,String username, String password, List<Message> messages) {
+  super(id,username, password, Role.USER, messages);
   }
 
   @Override
@@ -27,6 +26,6 @@ public class StandardUser extends User {
         super.getMessages().stream()
             .filter(m -> m.getStatus().equals(Message.Status.UNREAD))
             .count();
-    return countUnread > maxUnreadMessages;
+    return countUnread > MAX_UNREAD_MESSAGES;
   }
 }

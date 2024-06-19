@@ -1,16 +1,15 @@
 package org.zwierzchowski.marcin.user;
 
+import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.PROPERTY;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import lombok.AccessLevel;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import org.zwierzchowski.marcin.message.Message;
-import java.util.List;
-
-import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.PROPERTY;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = PROPERTY, property = "type")
 @JsonSubTypes({
@@ -22,17 +21,18 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.PROPERTY;
 @AllArgsConstructor
 public abstract class User {
 
-  @JsonProperty("username")
+  private int id;
   private String username;
-
-  @JsonProperty("password")
   private String password;
-  
-  @JsonProperty("role")
   private Role role;
-
-  @JsonProperty("messages")
   private List<Message> messages;
+
+  protected User(String username, String password, Role role, List<Message> messages) {
+    this.username = username;
+    this.password = password;
+    this.role = role;
+    this.messages = messages;
+  }
 
   public void addMessage(Message message) {
     messages.add(message);
@@ -43,5 +43,16 @@ public abstract class User {
   public enum Role {
     USER,
     ADMIN
+  }
+
+  @Override
+  public String toString() {
+    return "User{" +
+            "id=" + id +
+            ", username='" + username + '\'' +
+            ", password='" + password + '\'' +
+            ", role=" + role +
+            ", messages=" + messages +
+            '}';
   }
 }

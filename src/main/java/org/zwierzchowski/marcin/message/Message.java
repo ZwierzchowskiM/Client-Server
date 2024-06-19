@@ -1,35 +1,30 @@
 package org.zwierzchowski.marcin.message;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Getter;
-import lombok.Setter;
-
 import java.time.Instant;
 import java.util.Date;
+import lombok.Getter;
+import lombok.Setter;
 
 @Getter
 @Setter
 public class Message {
 
-  @JsonProperty("content")
   private String content;
-
-  @JsonProperty("sender")
   private String sender;
-
-  @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd@HH:mm:ss")
   private Date createdDate;
-
-  @JsonProperty("status")
   private Status status;
 
-  @JsonCreator
-  public Message(@JsonProperty("content") String content, @JsonProperty("sender") String sender) {
+  public Message(String content, String sender) {
     this.content = content;
     this.sender = sender;
     this.createdDate = Date.from(Instant.now());
+    this.status = Status.UNREAD;
+  }
+
+  public Message(String content, String sender, Date date, Status status) {
+    this.content = content;
+    this.sender = sender;
+    this.createdDate = date;
     this.status = Status.UNREAD;
   }
 

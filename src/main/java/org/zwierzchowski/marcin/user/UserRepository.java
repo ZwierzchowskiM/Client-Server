@@ -41,11 +41,14 @@ public class UserRepository {
     String usernameDb = userRecord.getValue(Users.USERS.USERNAME, String.class);
     String password = userRecord.getValue(Users.USERS.PASSWORD, String.class);
     String role = userRecord.getValue(Users.USERS.ROLE, String.class);
+    int id = userRecord.getValue(Users.USERS.ID, Integer.class);
+
+
 
     User user =
         switch (role) {
-          case "user" -> new StandardUser(usernameDb, password);
-          case "admin" -> new Admin(usernameDb, password);
+          case "user" -> new StandardUser(id, usernameDb, password, null);
+          case "admin" -> new Admin(id, usernameDb, password, null);
           default -> throw new UserNotFoundException("Unexpected value: ", username);
         };
     return user;

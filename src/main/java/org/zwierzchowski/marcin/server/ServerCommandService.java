@@ -41,7 +41,7 @@ public class ServerCommandService {
         case LOGOUT -> handleUserLogout();
         case DELETE -> handleUserDelete();
         case SEND -> handleSendMessage();
-        case READ -> handleReadMessages();
+        case READ -> handleReadAllMessages();
         case STOP -> handleStopServer();
         case UPTIME -> response.calculateUptime(serverData.getStartTime());
         case HELP -> response.printServerCommands(serverData.getCommandsInfo());
@@ -136,6 +136,7 @@ public class ServerCommandService {
       String sender = session.getLoggedInUser().getUsername();
       messageService.sendMessage(recipient, content, sender);
       return response.printText("Message to send successfully");
+
     } catch (IOException e) {
       log.error("Error while communicating with server", e);
       return response.printText("Error while communicating with server: " + e.getMessage());
@@ -162,6 +163,25 @@ public class ServerCommandService {
         return response.printText("No unread messages");
       }
       return response.printUnreadMessages(unreadMessages);
+
+    } catch (UserNotFoundException e) {
+      log.error("User not found", e);
+      return response.printText("Recipient not found: " + e.getMessage());
+    }
+  }
+
+  private String handleReadAllMessages() throws IOException {
+    try {
+      if (!session.isUserLoggedIn()) {
+        return response.printText("User needs to log in");
+      }
+      User user = session.getLoggedInUser();
+      List<Message> messages = messageService.getAllMessages(user.getUsername());
+      if (messages.isEmpty()) {
+        return response.printText("No messages");
+      }
+      return response.printUnreadMessages(messages);
+
     } catch (UserNotFoundException e) {
       log.error("User not found", e);
       return response.printText("Recipient not found: " + e.getMessage());
