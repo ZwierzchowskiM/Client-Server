@@ -1,6 +1,7 @@
 package org.zwierzchowski.marcin.message;
 
 import java.sql.Connection;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -29,11 +30,13 @@ public class MessageRepository {
         .set(Messages.MESSAGES.CONTENT, message.getContent())
         .set(Messages.MESSAGES.SENDER, message.getSender())
         .set(Messages.MESSAGES.USER_ID, userId)
+        .set(Messages.MESSAGES.DATE, message.getCreatedDate())
         .set(Messages.MESSAGES.STATUS, message.getStatus().toString())
         .execute();
+
   }
 
-  public List<Message> getMessagesByUserId(int id) {
+  public List<Message> findMessagesByUserId(int id) {
 
     Result<Record> messages =
         context.select().from(Messages.MESSAGES).where(Messages.MESSAGES.USER_ID.eq(id)).fetch();
@@ -44,8 +47,8 @@ public class MessageRepository {
       String content = message.getValue(Messages.MESSAGES.CONTENT, String.class);
       String sender = message.getValue(Messages.MESSAGES.SENDER, String.class);
       String status = message.getValue(Messages.MESSAGES.STATUS, String.class);
-//      Date date = message.getValue(Messages.MESSAGES.DATE, Date.class);
-      Message newMessage = new Message(content, sender, new Date(), Message.Status.valueOf(status));
+      LocalDateTime date = message.getValue(Messages.MESSAGES.DATE, LocalDateTime.class);
+      Message newMessage = new Message(content, sender, date, Message.Status.valueOf(status));
       messageList.add(newMessage);
     }
 

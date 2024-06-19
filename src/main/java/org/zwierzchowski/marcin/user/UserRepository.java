@@ -43,8 +43,6 @@ public class UserRepository {
     String role = userRecord.getValue(Users.USERS.ROLE, String.class);
     int id = userRecord.getValue(Users.USERS.ID, Integer.class);
 
-
-
     User user =
         switch (role) {
           case "user" -> new StandardUser(id, usernameDb, password, null);
@@ -56,15 +54,5 @@ public class UserRepository {
 
   public void deleteUser(String username) {
     context.delete(Users.USERS).where(Users.USERS.USERNAME.eq(username)).execute();
-  }
-
-  public void updateUser(User updatedUser, String username) {
-    context
-        .update(Users.USERS)
-        .set(Users.USERS.USERNAME, updatedUser.getUsername())
-        .set(Users.USERS.PASSWORD, updatedUser.getPassword())
-        .set(Users.USERS.ROLE, String.valueOf(updatedUser.getRole()))
-        .where(Users.USERS.USERNAME.eq(username))
-        .execute();
   }
 }

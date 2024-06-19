@@ -39,9 +39,10 @@ public class ServerCommandService {
         case REGISTER -> handleRegistration();
         case LOGIN -> handleUserLogin();
         case LOGOUT -> handleUserLogout();
-        case DELETE -> handleUserDelete();
+        case DELETE_USER -> handleUserDelete();
         case SEND -> handleSendMessage();
-        case READ -> handleReadAllMessages();
+        case READ_ALL -> handleReadAllMessages();
+        case READ_UNREAD -> handleReadUnreadMessages();
         case STOP -> handleStopServer();
         case UPTIME -> response.calculateUptime(serverData.getStartTime());
         case HELP -> response.printServerCommands(serverData.getCommandsInfo());
@@ -51,15 +52,15 @@ public class ServerCommandService {
     } catch (JsonProcessingException e) {
       log.error("JSON processing error", e);
       return response.printError(e.getMessage());
-    } catch (IOException e) {
-      log.error("IO error", e);
-      return response.printError(e.getMessage());
     } catch (InvalidCredentialsFormatException e) {
       log.error("Invalid Credentials format", e);
       return response.printError(e.getMessage());
     } catch (UserNotFoundException | InvalidPasswordException e) {
       log.error("Invalid user credentials", e);
       return response.printError(e.getMessage());
+    } catch (IOException e) {
+      log.error("Error while communicating with server", e);
+      return response.printText("Error while communicating with server: " + e.getMessage());
     }
   }
 
@@ -120,6 +121,7 @@ public class ServerCommandService {
     return response.printText("User successfully deleted");
   }
 
+
   private String handleSendMessage() throws JsonProcessingException {
 
     try {
@@ -152,24 +154,6 @@ public class ServerCommandService {
     }
   }
 
-  private String handleReadMessages() throws IOException {
-    try {
-      if (!session.isUserLoggedIn()) {
-        return response.printText("User needs to log in");
-      }
-      User user = session.getLoggedInUser();
-      List<Message> unreadMessages = messageService.getUnreadMessages(user.getUsername());
-      if (unreadMessages.isEmpty()) {
-        return response.printText("No unread messages");
-      }
-      return response.printUnreadMessages(unreadMessages);
-
-    } catch (UserNotFoundException e) {
-      log.error("User not found", e);
-      return response.printText("Recipient not found: " + e.getMessage());
-    }
-  }
-
   private String handleReadAllMessages() throws IOException {
     try {
       if (!session.isUserLoggedIn()) {
@@ -187,6 +171,25 @@ public class ServerCommandService {
       return response.printText("Recipient not found: " + e.getMessage());
     }
   }
+
+  private String handleReadUnreadMessages() throws IOException {
+    try {
+      if (!session.isUserLoggedIn()) {
+        return response.printText("User needs to log in");
+      }
+      User user = session.getLoggedInUser();
+      List<Message> messages = messageService.getUnreadMessages(user.getUsername());
+      if (messages.isEmpty()) {
+        return response.printText("No messages");
+      }
+      return response.printUnreadMessages(messages);
+
+    } catch (UserNotFoundException e) {
+      log.error("User not found", e);
+      return response.printText("Recipient not found: " + e.getMessage());
+    }
+  }
+
 
   public String printOptions() throws JsonProcessingException {
     if (session.isUserLoggedIn()) {
@@ -208,8 +211,10 @@ public class ServerCommandService {
     options
         .append("Type command: ")
         .append("SEND, ")
-        .append("READ, ")
-        .append("DELETE, ")
+        .append("READ_ALL, ")
+        .append("READ_UNREAD, ")
+        .append("UPDATE_USER, ")
+        .append("DELETE_USER, ")
         .append("HELP, ")
         .append("LOGOUT.");
     return response.printText(options.toString());
@@ -220,7 +225,8 @@ public class ServerCommandService {
     options
         .append("Type command: ")
         .append("SEND, ")
-        .append("READ, ")
+        .append("READ_ALL, ")
+        .append("READ_UNREAD, ")
         .append("HELP, ")
         .append("LOGOUT.");
     return response.printText(options.toString());
@@ -230,9 +236,10 @@ public class ServerCommandService {
     REGISTER,
     LOGIN,
     LOGOUT,
-    DELETE,
+    DELETE_USER,
     SEND,
-    READ,
+    READ_ALL,
+    READ_UNREAD,
     UPTIME,
     HELP,
     INFO,

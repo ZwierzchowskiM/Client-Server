@@ -23,7 +23,7 @@ public class MessageService {
   }
 
   public void sendMessage(String recipient, String content, String sender)
-      throws UserNotFoundException, UserInboxIsFullException, IOException {
+      throws UserNotFoundException, UserInboxIsFullException {
     Message message = new Message(content, sender);
 
     User user = userDataService.getUser(recipient);

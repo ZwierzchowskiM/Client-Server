@@ -50,10 +50,9 @@ public class UserDataService {
   public User getUser(String username) throws UserNotFoundException {
 
     User user = userRepository.finByUsername(username);
-    List<Message> messages = messageRepository.getMessagesByUserId(user.getId());
+    List<Message> messages = messageRepository.findMessagesByUserId(user.getId());
     user.setMessages(messages);
 
-    System.out.println(user.toString());
     return user;
   }
 
@@ -64,15 +63,5 @@ public class UserDataService {
       throw new UserNotFoundException("User not exist", username);
     }
     userRepository.deleteUser(username);
-  }
-
-  public void updateUser(String username, String password, String role)
-      throws UserNotFoundException {
-    User user = userRepository.finByUsername(username);
-    user.setUsername(username);
-    user.setPassword(password);
-    user.setRole(User.Role.valueOf(role.toUpperCase()));
-
-    userRepository.updateUser(user, username);
   }
 }

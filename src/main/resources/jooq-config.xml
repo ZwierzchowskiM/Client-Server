@@ -17,6 +17,7 @@
             <inputSchema>public</inputSchema>
             <includes>.*</includes>
             <excludes></excludes>
+            <dateAsTimestamp>true</dateAsTimestamp>
         </database>
 
         <target>
