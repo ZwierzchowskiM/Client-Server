@@ -1,19 +1,25 @@
 package org.zwierzchowski.marcin.user;
 
+import java.util.List;
 import org.mindrot.jbcrypt.BCrypt;
 import org.zwierzchowski.marcin.exception.InvalidCredentialsFormatException;
 import org.zwierzchowski.marcin.exception.InvalidPasswordException;
 import org.zwierzchowski.marcin.exception.UserNotFoundException;
-import org.zwierzchowski.marcin.utils.FileService;
-
-import java.io.IOException;
-import java.util.Map;
+import org.zwierzchowski.marcin.message.Message;
+import org.zwierzchowski.marcin.message.MessageRepository;
 
 public class UserDataService {
 
+  private UserRepository userRepository;
+  private MessageRepository messageRepository;
+
+  public UserDataService() {
+    userRepository = new UserRepository();
+    messageRepository = new MessageRepository();
+  }
+
   public User addUser(String username, String password, String role)
-      throws IOException, InvalidCredentialsFormatException {
-    Map<String, User> users = FileService.loadDataBase();
+      throws InvalidCredentialsFormatException {
     String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
     User newUser =
         switch (role.toLowerCase()) {
@@ -22,19 +28,18 @@ public class UserDataService {
           default -> throw new InvalidCredentialsFormatException("Unexpected value: " + role);
         };
 
-    users.put(username, newUser);
-    FileService.saveDataBase(users);
+    userRepository.saveUser(newUser);
     return newUser;
   }
 
   public boolean isValidCredentials(String username, String password)
-      throws IOException, UserNotFoundException, InvalidPasswordException {
-    Map<String, User> users = FileService.loadDataBase();
-    if (!users.containsKey(username)) {
+      throws UserNotFoundException, InvalidPasswordException, IllegalArgumentException {
+
+    User user = userRepository.finByUsername(username);
+    if (user == null) {
       throw new UserNotFoundException("User not exist", username);
     }
 
-    User user = users.get(username);
     if (!BCrypt.checkpw(password, user.getPassword())) {
       throw new InvalidPasswordException("Invalid password");
     }
@@ -42,23 +47,21 @@ public class UserDataService {
     return true;
   }
 
-  public User getUser(String username) throws IOException, UserNotFoundException {
-    Map<String, User> users = FileService.loadDataBase();
-    User user = users.get(username);
-    if (user == null) {
-      throw new UserNotFoundException("User not find:", username);
-    }
+  public User getUser(String username) throws UserNotFoundException {
+
+    User user = userRepository.finByUsername(username);
+    List<Message> messages = messageRepository.findMessagesByUserId(user.getId());
+    user.setMessages(messages);
+
     return user;
   }
 
-  public void deleteUser(String username) throws IOException, UserNotFoundException {
+  public void deleteUser(String username) throws UserNotFoundException {
 
-    Map<String, User> users = FileService.loadDataBase();
-    if (users.containsKey(username)) {
-      users.remove(username);
-      FileService.saveDataBase(users);
-    } else {
-      throw new UserNotFoundException("User not found", username);
+    User user = userRepository.finByUsername(username);
+    if (user == null) {
+      throw new UserNotFoundException("User not exist", username);
     }
+    userRepository.deleteUser(username);
   }
 }

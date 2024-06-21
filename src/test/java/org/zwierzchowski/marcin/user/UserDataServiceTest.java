@@ -145,7 +145,7 @@ class UserDataServiceTest {
   @Test
   @DisplayName("Should return true for valid credentials")
   void shouldReturnTrueForValidCredentials()
-      throws IOException, UserNotFoundException, InvalidPasswordException {
+      throws UserNotFoundException, InvalidPasswordException, IllegalArgumentException {
     users.put(username, testUser);
 
     try (MockedStatic<FileService> fileServiceMock = Mockito.mockStatic(FileService.class)) {

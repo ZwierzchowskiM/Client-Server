@@ -2,6 +2,7 @@ package org.zwierzchowski.marcin.server;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
@@ -12,7 +13,7 @@ import org.zwierzchowski.marcin.message.Message;
 
 public class ServerResponse {
 
-  private final ObjectMapper mapper = new ObjectMapper();
+  private final ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
   public String calculateUptime(Instant startTime) throws JsonProcessingException {
     Duration serverUptime = Duration.between(startTime, Instant.now());
@@ -45,11 +46,9 @@ public class ServerResponse {
   public String printLoginStatus(boolean status) throws JsonProcessingException {
     Map<String, String> response = new HashMap<>();
     if (status) {
-      response.put("status", "success");
-      response.put("message", "User sucessfully logged in");
+      response.put("status", "User sucessfully logged in");
     } else {
-      response.put("status", "failure");
-      response.put("message", "Incorrect username or password");
+      response.put("status", "Incorrect username or password");
     }
     return mapper.writeValueAsString(response);
   }

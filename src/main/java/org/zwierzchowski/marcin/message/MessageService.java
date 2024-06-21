@@ -1,43 +1,38 @@
 package org.zwierzchowski.marcin.message;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.zwierzchowski.marcin.exception.UserInboxIsFullException;
 import org.zwierzchowski.marcin.exception.UserNotFoundException;
 import org.zwierzchowski.marcin.user.User;
-import org.zwierzchowski.marcin.utils.FileService;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import org.zwierzchowski.marcin.user.UserDataService;
 
 public class MessageService {
 
+  MessageRepository messageRepository;
+  UserDataService userDataService;
+
+  public MessageService() {
+    messageRepository = new MessageRepository();
+    userDataService = new UserDataService();
+  }
+
   public void sendMessage(String recipient, String content, String sender)
-      throws UserNotFoundException, UserInboxIsFullException, IOException {
+      throws UserNotFoundException, UserInboxIsFullException {
     Message message = new Message(content, sender);
-    Map<String, User> users = FileService.loadDataBase();
 
-    if (!users.containsKey(recipient)) {
-      throw new UserNotFoundException("Recipient not found", recipient);
-    }
-
-    User user = users.get(recipient);
+    User user = userDataService.getUser(recipient);
 
     if (user.isUserInboxFull()) {
       throw new UserInboxIsFullException("Recipient inbox is full", recipient);
     }
-    user.addMessage(message);
-    FileService.saveDataBase(users);
+    messageRepository.saveMessage(message, user.getId());
   }
 
   public List<Message> getUnreadMessages(String username)
-      throws IOException, UserNotFoundException {
+      throws UserNotFoundException {
 
-    Map<String, User> users = FileService.loadDataBase();
-    if (!users.containsKey(username)) {
-      throw new UserNotFoundException("Recipient not found", username);
-    }
-    User user = users.get(username);
+    User user = userDataService.getUser(username);
     List<Message> messages = user.getMessages();
     List<Message> unreadMessages = new ArrayList<>();
     if (!messages.isEmpty()) {
@@ -45,11 +40,18 @@ public class MessageService {
         if (m.getStatus().equals(Message.Status.UNREAD)) {
           unreadMessages.add(m);
           m.setStatus(Message.Status.READ);
+          messageRepository.updateMessage(m.getId());
         }
       }
     }
-
-    FileService.saveDataBase(users);
     return unreadMessages;
+  }
+
+  public List<Message> getAllMessages(String username) throws UserNotFoundException {
+
+    User user = userDataService.getUser(username);
+    List<Message> messages = user.getMessages();
+
+    return messages;
   }
 }

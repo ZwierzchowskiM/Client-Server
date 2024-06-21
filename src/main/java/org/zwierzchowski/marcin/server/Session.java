@@ -11,7 +11,7 @@ public class Session {
   private User loggedInUser;
 
   public boolean isUserLoggedIn() {
-    return loggedInUser != null;
+    return loggedInUser != null && !loggedInUser.getRole().equals(User.Role.ADMIN);
   }
 
   public boolean isAdminLoggedIn() {

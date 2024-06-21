@@ -11,6 +11,8 @@ import org.zwierzchowski.marcin.message.Message;
 import org.zwierzchowski.marcin.message.MessageService;
 import org.zwierzchowski.marcin.user.User;
 import org.zwierzchowski.marcin.user.UserDataService;
+import org.zwierzchowski.marcin.user.dto.UserLoginDTO;
+import org.zwierzchowski.marcin.user.dto.UserRegistrationDTO;
 import org.zwierzchowski.marcin.utils.CredentialsValidator;
 import org.zwierzchowski.marcin.utils.MessageValidator;
 
@@ -39,60 +41,73 @@ public class ServerCommandService {
         case REGISTER -> handleRegistration();
         case LOGIN -> handleUserLogin();
         case LOGOUT -> handleUserLogout();
-        case DELETE -> handleUserDelete();
+        case DELETE_USER -> handleUserDelete();
         case SEND -> handleSendMessage();
-        case READ -> handleReadMessages();
+        case READ_ALL -> handleReadAllMessages();
+        case READ_UNREAD -> handleReadUnreadMessages();
         case STOP -> handleStopServer();
         case UPTIME -> response.calculateUptime(serverData.getStartTime());
         case HELP -> response.printServerCommands(serverData.getCommandsInfo());
         case INFO -> response.printServerInfo(serverData.getSeverInfo());
         case UNKNOWN -> response.printText("Command unknown");
       };
-    } catch (JsonProcessingException e) {
-      log.error("JSON processing error", e);
-      return response.printError(e.getMessage());
-    } catch (IOException e) {
-      log.error("IO error", e);
-      return response.printError(e.getMessage());
-    } catch (InvalidCredentialsFormatException e) {
-      log.error("Invalid Credentials format", e);
-      return response.printError(e.getMessage());
-    } catch (UserNotFoundException | InvalidPasswordException e) {
-      log.error("Invalid user credentials", e);
-      return response.printError(e.getMessage());
+    } catch (Exception e) {
+      return handleException(e);
     }
   }
 
   private String handleRegistration() throws IOException, InvalidCredentialsFormatException {
-    serverNetworkHandler.sendMessage(response.printText("Please provide username"));
-    String username = serverNetworkHandler.receiveMessage();
-    CredentialsValidator.validateUsername(username);
 
-    serverNetworkHandler.sendMessage(response.printText("Please provide password"));
-    String password = serverNetworkHandler.receiveMessage();
-    CredentialsValidator.validatePassword(password);
+    UserRegistrationDTO userDto = requestRegistrationData();
+    validateUserRegistrationData(userDto);
 
-    serverNetworkHandler.sendMessage(response.printText("Please provide user role"));
-    String role = serverNetworkHandler.receiveMessage();
-    CredentialsValidator.validateRole(role);
-
-    User user = userDataService.addUser(username, password, role);
+    User user =
+        userDataService.addUser(userDto.getUsername(), userDto.getPassword(), userDto.getRole());
 
     return response.printText("User: " + user.getUsername() + " successfully registered");
   }
 
-  private String handleUserLogin()
-      throws IOException, UserNotFoundException, InvalidPasswordException {
+  private UserRegistrationDTO requestRegistrationData() throws IOException {
     serverNetworkHandler.sendMessage(response.printText("Please provide username"));
     String username = serverNetworkHandler.receiveMessage();
 
     serverNetworkHandler.sendMessage(response.printText("Please provide password"));
     String password = serverNetworkHandler.receiveMessage();
 
-    userDataService.isValidCredentials(username, password);
-    User user = userDataService.getUser(username);
+    serverNetworkHandler.sendMessage(response.printText("Please provide user role"));
+    String role = serverNetworkHandler.receiveMessage();
+
+    return new UserRegistrationDTO(username, password, role);
+  }
+
+  private void validateUserRegistrationData(UserRegistrationDTO user)
+      throws InvalidCredentialsFormatException {
+    CredentialsValidator.validateUsername(user.getUsername());
+    CredentialsValidator.validatePassword(user.getPassword());
+    CredentialsValidator.validateRole(user.getRole());
+  }
+
+  private String handleUserLogin()
+      throws IOException,
+          UserNotFoundException,
+          InvalidPasswordException,
+          IllegalArgumentException {
+
+    UserLoginDTO userDto = requestLoginData();
+    userDataService.isValidCredentials(userDto.getUsername(), userDto.getPassword());
+    User user = userDataService.getUser(userDto.getUsername());
     session.setLoggedInUser(user);
     return response.printLoginStatus(true);
+  }
+
+  private UserLoginDTO requestLoginData() throws IOException {
+    serverNetworkHandler.sendMessage(response.printText("Please provide username"));
+    String username = serverNetworkHandler.receiveMessage();
+
+    serverNetworkHandler.sendMessage(response.printText("Please provide password"));
+    String password = serverNetworkHandler.receiveMessage();
+
+    return new UserLoginDTO(username, password);
   }
 
   private String handleStopServer() throws JsonProcessingException {
@@ -120,52 +135,48 @@ public class ServerCommandService {
     return response.printText("User successfully deleted");
   }
 
-  private String handleSendMessage() throws JsonProcessingException {
+  private String handleSendMessage()
+      throws IOException, InvalidMessageException, UserNotFoundException, UserInboxIsFullException {
 
-    try {
-      if (!session.isUserLoggedIn()) {
-        return response.printText("User needs to log in");
-      }
-      serverNetworkHandler.sendMessage(response.printText("Please provide recipient"));
-      String recipient = serverNetworkHandler.receiveMessage();
-
-      serverNetworkHandler.sendMessage(response.printText("Please provide  message"));
-      String content = serverNetworkHandler.receiveMessage();
-
-      MessageValidator.validateMessage(content);
-      String sender = session.getLoggedInUser().getUsername();
-      messageService.sendMessage(recipient, content, sender);
-      return response.printText("Message to send successfully");
-    } catch (IOException e) {
-      log.error("Error while communicating with server", e);
-      return response.printText("Error while communicating with server: " + e.getMessage());
-    } catch (InvalidMessageException e) {
-      log.error("Invalid Message format", e);
-      return response.printText("Invalid message: " + e.getMessage());
-    } catch (UserNotFoundException e) {
-      log.error("User not found", e);
-      return response.printText("Recipient not found: " + e.getMessage());
-    } catch (UserInboxIsFullException e) {
-      log.error("User inbox is full", e);
-      return response.printText("Message not send." + e.getMessage());
+    if (!session.isUserLoggedIn()) {
+      return response.printText("User needs to log in");
     }
+    serverNetworkHandler.sendMessage(response.printText("Please provide recipient"));
+    String recipient = serverNetworkHandler.receiveMessage();
+
+    serverNetworkHandler.sendMessage(response.printText("Please provide  message"));
+    String content = serverNetworkHandler.receiveMessage();
+
+    MessageValidator.validateMessage(content);
+    String sender = session.getLoggedInUser().getUsername();
+    messageService.sendMessage(recipient, content, sender);
+    return response.printText("Message to send successfully");
   }
 
-  private String handleReadMessages() throws IOException {
-    try {
-      if (!session.isUserLoggedIn()) {
-        return response.printText("User needs to log in");
-      }
-      User user = session.getLoggedInUser();
-      List<Message> unreadMessages = messageService.getUnreadMessages(user.getUsername());
-      if (unreadMessages.isEmpty()) {
-        return response.printText("No unread messages");
-      }
-      return response.printUnreadMessages(unreadMessages);
-    } catch (UserNotFoundException e) {
-      log.error("User not found", e);
-      return response.printText("Recipient not found: " + e.getMessage());
+  private String handleReadAllMessages() throws IOException, UserNotFoundException {
+
+    if (!session.isUserLoggedIn()) {
+      return response.printText("User needs to log in");
     }
+    User user = session.getLoggedInUser();
+    List<Message> messages = messageService.getAllMessages(user.getUsername());
+    if (messages.isEmpty()) {
+      return response.printText("No messages");
+    }
+    return response.printUnreadMessages(messages);
+  }
+
+  private String handleReadUnreadMessages() throws IOException, UserNotFoundException {
+
+    if (!session.isUserLoggedIn()) {
+      return response.printText("User needs to log in");
+    }
+    User user = session.getLoggedInUser();
+    List<Message> messages = messageService.getUnreadMessages(user.getUsername());
+    if (messages.isEmpty()) {
+      return response.printText("No messages");
+    }
+    return response.printUnreadMessages(messages);
   }
 
   public String printOptions() throws JsonProcessingException {
@@ -178,41 +189,61 @@ public class ServerCommandService {
 
   private String printWelcomeOptions() throws JsonProcessingException {
 
-    StringBuilder options = new StringBuilder();
-    options.append("Type command: ").append("LOGIN,").append("REGISTER.");
-    return response.printText(options.toString());
+    return response.printText("Type command: " + "LOGIN," + "REGISTER.");
   }
 
   private String printAdminOptions() throws JsonProcessingException {
-    StringBuilder options = new StringBuilder();
-    options
-        .append("Type command: ")
-        .append("SEND, ")
-        .append("READ, ")
-        .append("DELETE, ")
-        .append("HELP, ")
-        .append("LOGOUT.");
-    return response.printText(options.toString());
+    String options =
+        "Type command: "
+            + "SEND, "
+            + "READ_ALL, "
+            + "READ_UNREAD, "
+            + "UPDATE_USER, "
+            + "DELETE_USER, "
+            + "HELP, "
+            + "LOGOUT.";
+    return response.printText(options);
   }
 
   private String printUserOptions() throws JsonProcessingException {
-    StringBuilder options = new StringBuilder();
-    options
-        .append("Type command: ")
-        .append("SEND, ")
-        .append("READ, ")
-        .append("HELP, ")
-        .append("LOGOUT.");
-    return response.printText(options.toString());
+    String options =
+        "Type command: " + "SEND, " + "READ_ALL, " + "READ_UNREAD, " + "HELP, " + "LOGOUT.";
+    return response.printText(options);
+  }
+
+  private String handleException(Exception e) throws JsonProcessingException {
+    if (e instanceof JsonProcessingException) {
+      log.error("JSON processing error", e);
+      return response.printError(e.getMessage());
+    } else if (e instanceof InvalidCredentialsFormatException) {
+      log.error("Invalid Credentials format", e);
+      return response.printError(e.getMessage());
+    } else if (e instanceof UserNotFoundException || e instanceof InvalidPasswordException) {
+      log.error("Invalid user credentials", e);
+      return response.printError(e.getMessage());
+    } else if (e instanceof UserInboxIsFullException) {
+      log.error("User inbox is full", e);
+      return response.printText("Message not send." + e.getMessage());
+    } else if (e instanceof InvalidMessageException) {
+      log.error("Invalid Message format", e);
+      return response.printText("Invalid message: " + e.getMessage());
+    } else if (e instanceof IOException) {
+      log.error("Error while communicating with server", e);
+      return response.printText("Error while communicating with server: " + e.getMessage());
+    } else {
+      log.error("Unexpected error", e);
+      return response.printText("Unexpected error: " + e.getMessage());
+    }
   }
 
   public enum Command {
     REGISTER,
     LOGIN,
     LOGOUT,
-    DELETE,
+    DELETE_USER,
     SEND,
-    READ,
+    READ_ALL,
+    READ_UNREAD,
     UPTIME,
     HELP,
     INFO,

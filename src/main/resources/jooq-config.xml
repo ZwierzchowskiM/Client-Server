@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+
+<configuration xmlns="http://www.jooq.org/xsd/jooq-codegen-3.19.0.xsd">
+
+    <jdbc>
+        <driver>org.postgresql.Driver</driver>
+        <url>jdbc:postgresql://localhost:5432/client_server</url>
+        <user>marcin</user>
+        <password>pass</password>
+    </jdbc>
+
+    <generator>
+        <name>org.jooq.codegen.JavaGenerator</name>
+
+        <database>
+            <name>org.jooq.meta.postgres.PostgresDatabase</name>
+            <inputSchema>public</inputSchema>
+            <includes>.*</includes>
+            <excludes></excludes>
+            <dateAsTimestamp>true</dateAsTimestamp>
+        </database>
+
+        <target>
+            <packageName>org.zwierzchowski.marcin.db</packageName>
+            <directory>C:/Users/marci/IdeaProjects/ZR/client-server/client-server/src/main/java</directory>
+        </target>
+    </generator>
+
+</configuration>
+
