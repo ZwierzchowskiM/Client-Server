@@ -10,6 +10,7 @@ import lombok.Setter;
 @Setter
 public class Message {
 
+  private int id;
   private String content;
   private String sender;
   private LocalDateTime createdDate;
@@ -23,7 +24,8 @@ public class Message {
     this.status = Status.UNREAD;
   }
 
-  public Message(String content, String sender, LocalDateTime date, Status status) {
+  public Message(int id, String content, String sender, LocalDateTime date, Status status) {
+    this.id = id;
     this.content = content;
     this.sender = sender;
     this.createdDate = date;

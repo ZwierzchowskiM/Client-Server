@@ -32,7 +32,6 @@ public class MessageRepository {
         .set(Messages.MESSAGES.DATE, message.getCreatedDate())
         .set(Messages.MESSAGES.STATUS, message.getStatus().toString())
         .execute();
-
   }
 
   public List<Message> findMessagesByUserId(int id) {
@@ -43,14 +42,22 @@ public class MessageRepository {
     List<Message> messageList = new ArrayList<>();
 
     for (Record message : messages) {
+      int messageId = message.getValue(Messages.MESSAGES.ID, Integer.class);
       String content = message.getValue(Messages.MESSAGES.CONTENT, String.class);
       String sender = message.getValue(Messages.MESSAGES.SENDER, String.class);
       String status = message.getValue(Messages.MESSAGES.STATUS, String.class);
       LocalDateTime date = message.getValue(Messages.MESSAGES.DATE, LocalDateTime.class);
-      Message newMessage = new Message(content, sender, date, Message.Status.valueOf(status));
+      Message newMessage = new Message(messageId, content, sender, date, Message.Status.valueOf(status));
       messageList.add(newMessage);
     }
-
     return messageList;
+  }
+
+  public void updateMessage(int id) {
+
+    context.update(Messages.MESSAGES)
+        .set(Messages.MESSAGES.STATUS, Message.Status.READ.toString())
+        .where(Messages.MESSAGES.ID.eq(id))
+        .execute();
   }
 }

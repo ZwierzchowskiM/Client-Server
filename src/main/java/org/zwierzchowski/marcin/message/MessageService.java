@@ -1,14 +1,11 @@
 package org.zwierzchowski.marcin.message;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import org.zwierzchowski.marcin.exception.UserInboxIsFullException;
 import org.zwierzchowski.marcin.exception.UserNotFoundException;
 import org.zwierzchowski.marcin.user.User;
 import org.zwierzchowski.marcin.user.UserDataService;
-import org.zwierzchowski.marcin.utils.FileService;
 
 public class MessageService {
 
@@ -33,13 +30,9 @@ public class MessageService {
   }
 
   public List<Message> getUnreadMessages(String username)
-      throws IOException, UserNotFoundException {
+      throws UserNotFoundException {
 
-    Map<String, User> users = FileService.loadDataBase();
-    if (!users.containsKey(username)) {
-      throw new UserNotFoundException("Recipient not found", username);
-    }
-    User user = users.get(username);
+    User user = userDataService.getUser(username);
     List<Message> messages = user.getMessages();
     List<Message> unreadMessages = new ArrayList<>();
     if (!messages.isEmpty()) {
@@ -47,29 +40,18 @@ public class MessageService {
         if (m.getStatus().equals(Message.Status.UNREAD)) {
           unreadMessages.add(m);
           m.setStatus(Message.Status.READ);
+          messageRepository.updateMessage(m.getId());
         }
       }
     }
-
-    FileService.saveDataBase(users);
     return unreadMessages;
   }
 
-  public List<Message> getAllMessages(String username) throws UserNotFoundException{
+  public List<Message> getAllMessages(String username) throws UserNotFoundException {
 
     User user = userDataService.getUser(username);
     List<Message> messages = user.getMessages();
 
-    List<Message> unreadMessages = new ArrayList<>();
-    if (!messages.isEmpty()) {
-      for (Message m : messages) {
-        if (m.getStatus().equals(Message.Status.UNREAD)) {
-          unreadMessages.add(m);
-          m.setStatus(Message.Status.READ);
-        }
-      }
-    }
-
-    return unreadMessages;
+    return messages;
   }
 }

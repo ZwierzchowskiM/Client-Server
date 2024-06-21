@@ -12,6 +12,7 @@ import java.util.List;
 import org.jooq.Condition;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Identity;
 import org.jooq.InverseForeignKey;
 import org.jooq.Name;
 import org.jooq.Path;
@@ -25,6 +26,7 @@ import org.jooq.Stringly;
 import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableOptions;
+import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
@@ -79,6 +81,11 @@ public class Messages extends TableImpl<MessagesRecord> {
      * The column <code>public.messages.status</code>.
      */
     public final TableField<MessagesRecord, String> STATUS = createField(DSL.name("status"), SQLDataType.VARCHAR(10), this, "");
+
+    /**
+     * The column <code>public.messages.id</code>.
+     */
+    public final TableField<MessagesRecord, Integer> ID = createField(DSL.name("id"), SQLDataType.INTEGER.nullable(false).identity(true), this, "");
 
     private Messages(Name alias, Table<MessagesRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
@@ -143,6 +150,16 @@ public class Messages extends TableImpl<MessagesRecord> {
     @Override
     public Schema getSchema() {
         return aliased() ? null : Public.PUBLIC;
+    }
+
+    @Override
+    public Identity<MessagesRecord, Integer> getIdentity() {
+        return (Identity<MessagesRecord, Integer>) super.getIdentity();
+    }
+
+    @Override
+    public UniqueKey<MessagesRecord> getPrimaryKey() {
+        return Keys.MESSAGES_PKEY;
     }
 
     @Override
