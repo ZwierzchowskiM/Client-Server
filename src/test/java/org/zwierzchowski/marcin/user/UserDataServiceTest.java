@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.mindrot.jbcrypt.BCrypt;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.zwierzchowski.marcin.exception.DatabaseConnectionException;
 import org.zwierzchowski.marcin.exception.InvalidCredentialsFormatException;
 import org.zwierzchowski.marcin.exception.InvalidPasswordException;
 import org.zwierzchowski.marcin.exception.UserNotFoundException;
@@ -28,7 +29,7 @@ class UserDataServiceTest {
   private String role;
 
   @BeforeEach
-  void setUp() {
+  void setUp() throws DatabaseConnectionException {
     userDataService = new UserDataService();
     users = new HashMap<>();
     username = "john";

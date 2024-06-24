@@ -10,6 +10,7 @@ import org.jooq.Result;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
 import org.zwierzchowski.marcin.db.tables.Messages;
+import org.zwierzchowski.marcin.exception.DatabaseConnectionException;
 import org.zwierzchowski.marcin.utils.DataBaseManager;
 
 public class MessageRepository {
@@ -17,7 +18,7 @@ public class MessageRepository {
   DSLContext context;
   DataBaseManager dataBaseManager;
 
-  public MessageRepository() {
+  public MessageRepository() throws DatabaseConnectionException {
     dataBaseManager = new DataBaseManager();
     Connection conn = dataBaseManager.getConnection();
     context = DSL.using(conn, SQLDialect.POSTGRES);

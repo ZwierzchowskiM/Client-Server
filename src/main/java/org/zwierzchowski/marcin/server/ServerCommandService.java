@@ -19,18 +19,21 @@ import org.zwierzchowski.marcin.utils.MessageValidator;
 @Log4j2
 public class ServerCommandService {
 
-  private UserDataService userDataService = new UserDataService();
-  private MessageService messageService = new MessageService();
-  private ServerResponse response = new ServerResponse();
+  private UserDataService userDataService;
+  private MessageService messageService;
+  private ServerResponse response;
   private ServerNetworkHandler serverNetworkHandler;
   private Session session;
   private ServerData serverData;
 
   public ServerCommandService(
-      ServerNetworkHandler serverNetworkHandler, Session session, ServerData serverData) {
+      ServerNetworkHandler serverNetworkHandler, Session session, ServerData serverData) throws DatabaseConnectionException {
     this.serverNetworkHandler = serverNetworkHandler;
     this.session = session;
     this.serverData = serverData;
+    this.response = new ServerResponse();
+    this.userDataService = new UserDataService();
+    this.messageService = new MessageService();
   }
 
   public String handleRequest(String clientRequest) throws JsonProcessingException {

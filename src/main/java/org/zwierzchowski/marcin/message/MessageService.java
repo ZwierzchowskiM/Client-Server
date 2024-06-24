@@ -2,6 +2,8 @@ package org.zwierzchowski.marcin.message;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import org.zwierzchowski.marcin.exception.DatabaseConnectionException;
 import org.zwierzchowski.marcin.exception.UserInboxIsFullException;
 import org.zwierzchowski.marcin.exception.UserNotFoundException;
 import org.zwierzchowski.marcin.user.User;
@@ -12,7 +14,7 @@ public class MessageService {
   MessageRepository messageRepository;
   UserDataService userDataService;
 
-  public MessageService() {
+  public MessageService() throws DatabaseConnectionException {
     messageRepository = new MessageRepository();
     userDataService = new UserDataService();
   }

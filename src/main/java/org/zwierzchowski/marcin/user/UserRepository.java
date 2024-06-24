@@ -6,6 +6,7 @@ import org.jooq.Record;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
 import org.zwierzchowski.marcin.db.tables.Users;
+import org.zwierzchowski.marcin.exception.DatabaseConnectionException;
 import org.zwierzchowski.marcin.exception.UserNotFoundException;
 import org.zwierzchowski.marcin.utils.DataBaseManager;
 
@@ -14,7 +15,7 @@ public class UserRepository {
   DSLContext context;
   DataBaseManager dataBaseManager;
 
-  public UserRepository() {
+  public UserRepository() throws DatabaseConnectionException {
     dataBaseManager = new DataBaseManager();
     Connection conn = dataBaseManager.getConnection();
     context = DSL.using(conn, SQLDialect.POSTGRES);
@@ -29,7 +30,7 @@ public class UserRepository {
         .execute();
   }
 
-  public User finByUsername(String username)
+  public User findByUsername(String username)
       throws UserNotFoundException {
 
     Record userRecord =

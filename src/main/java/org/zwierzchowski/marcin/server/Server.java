@@ -3,6 +3,7 @@ package org.zwierzchowski.marcin.server;
 import java.io.IOException;
 import java.net.ServerSocket;
 import lombok.extern.log4j.Log4j2;
+import org.zwierzchowski.marcin.exception.DatabaseConnectionException;
 
 @Log4j2
 public class Server {
@@ -16,15 +17,15 @@ public class Server {
   public Server(int port) {
     try {
       serverSocket = new ServerSocket(port);
-    } catch (IOException e) {
+      serverData = new ServerData();
+      serverNetworkHandler = new ServerNetworkHandler(serverSocket);
+      serverCommandService = new ServerCommandService(serverNetworkHandler, session, serverData);
+      log.info("Server started on port {}", port);
+    } catch (IOException | DatabaseConnectionException e) {
       log.error("Error creating server", e);
       log.info("Application is shutting down...");
       System.exit(1);
     }
-    serverData = new ServerData();
-    serverNetworkHandler = new ServerNetworkHandler(serverSocket);
-    serverCommandService = new ServerCommandService(serverNetworkHandler, session, serverData);
-    log.info("Server started on port {}", port);
   }
 
   public static void main(String[] args) {

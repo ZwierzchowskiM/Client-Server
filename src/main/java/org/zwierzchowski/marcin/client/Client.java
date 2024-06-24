@@ -44,8 +44,8 @@ public class Client {
 
   private void handleServerResponse() throws IOException {
     do {
-      String responseOpt = clientNetworkHandler.receiveResponse();
-      clientNetworkHandler.printServerResponse(responseOpt);
+      String serverResponse = clientNetworkHandler.receiveResponse();
+      clientNetworkHandler.printServerResponse(serverResponse);
     } while (clientNetworkHandler.hasResponse());
   }
 

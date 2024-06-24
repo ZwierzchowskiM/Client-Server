@@ -2,6 +2,7 @@ package org.zwierzchowski.marcin.user;
 
 import java.util.List;
 import org.mindrot.jbcrypt.BCrypt;
+import org.zwierzchowski.marcin.exception.DatabaseConnectionException;
 import org.zwierzchowski.marcin.exception.InvalidCredentialsFormatException;
 import org.zwierzchowski.marcin.exception.InvalidPasswordException;
 import org.zwierzchowski.marcin.exception.UserNotFoundException;
@@ -13,7 +14,7 @@ public class UserDataService {
   private UserRepository userRepository;
   private MessageRepository messageRepository;
 
-  public UserDataService() {
+  public UserDataService() throws DatabaseConnectionException {
     userRepository = new UserRepository();
     messageRepository = new MessageRepository();
   }
@@ -35,7 +36,7 @@ public class UserDataService {
   public boolean isValidCredentials(String username, String password)
       throws UserNotFoundException, InvalidPasswordException, IllegalArgumentException {
 
-    User user = userRepository.finByUsername(username);
+    User user = userRepository.findByUsername(username);
     if (user == null) {
       throw new UserNotFoundException("User not exist", username);
     }
@@ -49,7 +50,7 @@ public class UserDataService {
 
   public User getUser(String username) throws UserNotFoundException {
 
-    User user = userRepository.finByUsername(username);
+    User user = userRepository.findByUsername(username);
     List<Message> messages = messageRepository.findMessagesByUserId(user.getId());
     user.setMessages(messages);
 
@@ -58,7 +59,7 @@ public class UserDataService {
 
   public void deleteUser(String username) throws UserNotFoundException {
 
-    User user = userRepository.finByUsername(username);
+    User user = userRepository.findByUsername(username);
     if (user == null) {
       throw new UserNotFoundException("User not exist", username);
     }
