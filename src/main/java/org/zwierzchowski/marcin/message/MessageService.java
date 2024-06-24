@@ -2,7 +2,6 @@ package org.zwierzchowski.marcin.message;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import org.zwierzchowski.marcin.exception.DatabaseConnectionException;
 import org.zwierzchowski.marcin.exception.UserInboxIsFullException;
 import org.zwierzchowski.marcin.exception.UserNotFoundException;
@@ -55,5 +54,20 @@ public class MessageService {
     List<Message> messages = user.getMessages();
 
     return messages;
+  }
+
+  public boolean deleteMessage(String username, int id) throws UserNotFoundException {
+
+    User user = userDataService.getUser(username);
+    List<Message> messages = user.getMessages();
+
+    for (Message m : messages) {
+      if (m.getId() == id) {
+        messageRepository.deleteMessage(id);
+        return true;
+      }
+    }
+
+    return false;
   }
 }

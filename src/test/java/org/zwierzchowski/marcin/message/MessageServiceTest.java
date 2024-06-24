@@ -10,6 +10,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.zwierzchowski.marcin.exception.DatabaseConnectionException;
 import org.zwierzchowski.marcin.exception.UserInboxIsFullException;
 import org.zwierzchowski.marcin.exception.UserNotFoundException;
 import org.zwierzchowski.marcin.user.StandardUser;
@@ -27,7 +28,7 @@ class MessageServiceTest {
   private Map<String, User> users;
 
   @BeforeEach
-  void setUp() {
+  void setUp() throws DatabaseConnectionException {
 
     messageService = new MessageService();
     recipient = "recipient";

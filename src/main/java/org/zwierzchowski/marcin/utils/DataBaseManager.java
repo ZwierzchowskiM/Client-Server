@@ -40,7 +40,7 @@ public class DataBaseManager {
       password = properties.getProperty("password");
       url = properties.getProperty("url");
     } catch (Exception e) {
-      e.printStackTrace();
+      log.error("Failed to load database credentials", e);
     }
   }
 }

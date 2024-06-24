@@ -27,7 +27,8 @@ public class ServerCommandService {
   private ServerData serverData;
 
   public ServerCommandService(
-      ServerNetworkHandler serverNetworkHandler, Session session, ServerData serverData) throws DatabaseConnectionException {
+      ServerNetworkHandler serverNetworkHandler, Session session, ServerData serverData)
+      throws DatabaseConnectionException {
     this.serverNetworkHandler = serverNetworkHandler;
     this.session = session;
     this.serverData = serverData;
@@ -48,6 +49,7 @@ public class ServerCommandService {
         case SEND -> handleSendMessage();
         case READ_ALL -> handleReadAllMessages();
         case READ_UNREAD -> handleReadUnreadMessages();
+        case DELETE_MESSAGE -> handleDeleteMessage();
         case STOP -> handleStopServer();
         case UPTIME -> response.calculateUptime(serverData.getStartTime());
         case HELP -> response.printServerCommands(serverData.getCommandsInfo());
@@ -56,6 +58,23 @@ public class ServerCommandService {
       };
     } catch (Exception e) {
       return handleException(e);
+    }
+  }
+
+  private String handleDeleteMessage() throws IOException, UserNotFoundException {
+    if (!session.isUserLoggedIn()) {
+      return response.printText("No user logged in");
+    }
+
+    serverNetworkHandler.sendMessage(response.printText("Please provide message id to delete"));
+    String content = serverNetworkHandler.receiveMessage();
+
+    String sender = session.getLoggedInUser().getUsername();
+    boolean result = messageService.deleteMessage(sender, Integer.parseInt(content));
+    if (result) {
+      return response.printText("Message deleted successfully");
+    } else {
+      return response.printText("Message not found");
     }
   }
 
@@ -201,6 +220,7 @@ public class ServerCommandService {
             + "SEND, "
             + "READ_ALL, "
             + "READ_UNREAD, "
+            + "DELETE_MESSAGE, "
             + "UPDATE_USER, "
             + "DELETE_USER, "
             + "HELP, "
@@ -247,6 +267,7 @@ public class ServerCommandService {
     SEND,
     READ_ALL,
     READ_UNREAD,
+    DELETE_MESSAGE,
     UPTIME,
     HELP,
     INFO,

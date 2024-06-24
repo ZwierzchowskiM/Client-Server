@@ -61,4 +61,11 @@ public class MessageRepository {
         .where(Messages.MESSAGES.ID.eq(id))
         .execute();
   }
+
+  public void deleteMessage(int id) {
+
+    context.delete(Messages.MESSAGES)
+            .where(Messages.MESSAGES.ID.eq(id))
+            .execute();
+  }
 }
