@@ -11,11 +11,11 @@ public class Session {
   private User loggedInUser;
 
   public boolean isUserLoggedIn() {
-    return loggedInUser != null && !loggedInUser.getRole().equals(User.Role.ADMIN);
+    return loggedInUser!= null && (loggedInUser.getRole().equals(User.Role.ADMIN) || loggedInUser.getRole().equals(User.Role.USER));
   }
 
   public boolean isAdminLoggedIn() {
-    return loggedInUser != null && loggedInUser.getRole().equals(User.Role.ADMIN);
+    return loggedInUser!= null && loggedInUser.getRole().equals(User.Role.ADMIN);
   }
 
   public void logoutUser() {

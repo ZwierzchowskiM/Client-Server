@@ -52,6 +52,7 @@ public class Server {
         log.info("Client request: {}", clientRequest);
 
         String serverResponse = serverCommandService.handleRequest(clientRequest);
+
         if ("STOP_SERVER".equals(serverResponse)) {
           break;
         }

@@ -1,49 +1,39 @@
 package org.zwierzchowski.marcin.user;
 
 
-import java.util.List;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
-import org.zwierzchowski.marcin.message.Message;
 
 @Getter
 @Setter
-@AllArgsConstructor
 public abstract class User {
+
+
 
   private int id;
   private String username;
   private String password;
   private Role role;
-  private List<Message> messages;
+  private  int maxUnreadMessages;
 
-  protected User(String username, String password, Role role, List<Message> messages) {
+  protected User(String username, String password, Role role, int maxUnreadMessages) {
     this.username = username;
     this.password = password;
     this.role = role;
-    this.messages = messages;
+    this.maxUnreadMessages = maxUnreadMessages;
   }
 
-  public void addMessage(Message message) {
-    messages.add(message);
+  protected User(int id,String username, String password, Role role, int maxUnreadMessages) {
+    this.id = id;
+    this.username = username;
+    this.password = password;
+    this.role = role;
+    this.maxUnreadMessages = maxUnreadMessages;
   }
-
-  public abstract boolean isUserInboxFull();
 
   public enum Role {
     USER,
     ADMIN
   }
 
-  @Override
-  public String toString() {
-    return "User{" +
-            "id=" + id +
-            ", username='" + username + '\'' +
-            ", password='" + password + '\'' +
-            ", role=" + role +
-            ", messages=" + messages +
-            '}';
-  }
 }

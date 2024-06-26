@@ -11,11 +11,12 @@ import lombok.Setter;
 public class Message {
 
   private int id;
+  @JsonIgnore
+  private int userID;
   private String content;
   private String sender;
   private LocalDateTime createdDate;
-  @JsonIgnore
-  private Status status;
+  @JsonIgnore private Status status;
 
   public Message(String content, String sender) {
     this.content = content;
@@ -24,8 +25,10 @@ public class Message {
     this.status = Status.UNREAD;
   }
 
-  public Message(int id, String content, String sender, LocalDateTime date, Status status) {
+  public Message(
+      int id, int userId, String content, String sender, LocalDateTime date, Status status) {
     this.id = id;
+    this.userID = userId;
     this.content = content;
     this.sender = sender;
     this.createdDate = date;

@@ -1,22 +1,19 @@
 package org.zwierzchowski.marcin.user;
 
-import java.util.List;
+
 import org.mindrot.jbcrypt.BCrypt;
 import org.zwierzchowski.marcin.exception.DatabaseConnectionException;
 import org.zwierzchowski.marcin.exception.InvalidCredentialsFormatException;
 import org.zwierzchowski.marcin.exception.InvalidPasswordException;
 import org.zwierzchowski.marcin.exception.UserNotFoundException;
-import org.zwierzchowski.marcin.message.Message;
-import org.zwierzchowski.marcin.message.MessageRepository;
 
 public class UserDataService {
 
   private UserRepository userRepository;
-  private MessageRepository messageRepository;
+
 
   public UserDataService() throws DatabaseConnectionException {
     userRepository = new UserRepository();
-    messageRepository = new MessageRepository();
   }
 
   public User addUser(String username, String password, String role)
@@ -51,8 +48,6 @@ public class UserDataService {
   public User getUser(String username) throws UserNotFoundException {
 
     User user = userRepository.findByUsername(username);
-    List<Message> messages = messageRepository.findMessagesByUserId(user.getId());
-    user.setMessages(messages);
 
     return user;
   }

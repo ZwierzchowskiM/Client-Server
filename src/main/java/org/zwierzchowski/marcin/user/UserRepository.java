@@ -30,8 +30,7 @@ public class UserRepository {
         .execute();
   }
 
-  public User findByUsername(String username)
-      throws UserNotFoundException {
+  public User findByUsername(String username) throws UserNotFoundException {
 
     Record userRecord =
         context.select().from(Users.USERS).where(Users.USERS.USERNAME.eq(username)).fetchOne();
@@ -47,8 +46,8 @@ public class UserRepository {
 
     User user =
         switch (role.toLowerCase()) {
-          case "user" -> new StandardUser(id, usernameDb, password, null);
-          case "admin" -> new Admin(id, usernameDb, password, null);
+          case "user" -> new StandardUser(id, usernameDb, password);
+          case "admin" -> new Admin(id, usernameDb, password);
           default -> throw new IllegalArgumentException("Unexpected value: " + role);
         };
     return user;

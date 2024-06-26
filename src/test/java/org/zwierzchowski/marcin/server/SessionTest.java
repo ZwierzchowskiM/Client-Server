@@ -21,7 +21,7 @@ class SessionTest {
 
   @Test
   void shoutReturnTrueWhenAdminIsLoggedIn() {
-    user = new Admin("user", "pass");
+    user = new Admin(1,"user", "pass");
     session.setLoggedInUser(user);
 
     assertTrue(session.isAdminLoggedIn());

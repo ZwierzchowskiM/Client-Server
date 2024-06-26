@@ -202,7 +202,7 @@ public class ServerCommandService {
   }
 
   public String printOptions() throws JsonProcessingException {
-    if (session.isUserLoggedIn()) {
+    if (session.isUserLoggedIn() && !session.isAdminLoggedIn()) {
       return printUserOptions();
     } else if (session.isAdminLoggedIn()) {
       return printAdminOptions();

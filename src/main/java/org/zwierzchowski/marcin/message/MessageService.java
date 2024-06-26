@@ -23,8 +23,9 @@ public class MessageService {
     Message message = new Message(content, sender);
 
     User user = userDataService.getUser(recipient);
+    List<Message> messages = messageRepository.findMessagesByUserId(user.getId());
 
-    if (user.isUserInboxFull()) {
+    if (messages.size() >= user.getMaxUnreadMessages()){
       throw new UserInboxIsFullException("Recipient inbox is full", recipient);
     }
     messageRepository.saveMessage(message, user.getId());
@@ -34,7 +35,7 @@ public class MessageService {
       throws UserNotFoundException {
 
     User user = userDataService.getUser(username);
-    List<Message> messages = user.getMessages();
+    List<Message> messages =  messageRepository.findMessagesByUserId(user.getId());
     List<Message> unreadMessages = new ArrayList<>();
     if (!messages.isEmpty()) {
       for (Message m : messages) {
@@ -51,7 +52,7 @@ public class MessageService {
   public List<Message> getAllMessages(String username) throws UserNotFoundException {
 
     User user = userDataService.getUser(username);
-    List<Message> messages = user.getMessages();
+    List<Message> messages =  messageRepository.findMessagesByUserId(user.getId());
 
     return messages;
   }
@@ -59,7 +60,7 @@ public class MessageService {
   public boolean deleteMessage(String username, int id) throws UserNotFoundException {
 
     User user = userDataService.getUser(username);
-    List<Message> messages = user.getMessages();
+    List<Message> messages =  messageRepository.findMessagesByUserId(user.getId());
 
     for (Message m : messages) {
       if (m.getId() == id) {
@@ -67,7 +68,6 @@ public class MessageService {
         return true;
       }
     }
-
     return false;
   }
 }
