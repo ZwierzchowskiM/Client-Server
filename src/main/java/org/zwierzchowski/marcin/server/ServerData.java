@@ -11,7 +11,7 @@ public class ServerData {
 
   private final Map<String, String> commandsInfo = new HashMap<>();
   private final Map<String, String> severInfo = new HashMap<>();
-  private static final String SERVER_VERSION = "0.2.0";
+  private static final String SERVER_VERSION = "0.3.0";
   private static final String SERVER_CREATION_DATE = "19.04.2024";
   private Instant startTime;
 
@@ -35,5 +35,34 @@ public class ServerData {
     severInfo.put("creation date", SERVER_CREATION_DATE);
 
     startTime = Instant.now();
+  }
+
+  public String printGuestOptions() {
+
+    return "Type command: " + "LOGIN," + "REGISTER.";
+  }
+
+  public String printAdminOptions() {
+    String options =
+        "Type command: "
+            + "SEND, "
+            + "READ_ALL, "
+            + "READ_UNREAD, "
+            + "DELETE_MESSAGE, "
+            + "UPDATE_USER, "
+            + "DELETE_USER, "
+            + "HELP, "
+            + "LOGOUT.";
+    return options;
+  }
+
+  public String printUserOptions() {
+    return "Type command: "
+        + "SEND, "
+        + "READ_ALL, "
+        + "READ_UNREAD, "
+        + "DELETE_MESSAGE, "
+        + "HELP, "
+        + "LOGOUT.";
   }
 }

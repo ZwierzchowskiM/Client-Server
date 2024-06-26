@@ -18,7 +18,7 @@ public class Client {
 
   public static void main(String[] args) {
     Client client = new Client();
-    client.communicateServer();
+    client.communicateWithServer();
   }
 
   public Client() {
@@ -31,7 +31,7 @@ public class Client {
     }
   }
 
-  private void communicateServer() {
+  private void communicateWithServer() {
     while (!clientNetworkHandler.getSocket().isClosed()) {
       try {
         handleServerResponse();
@@ -1305,11 +1305,12 @@ import lombok.Setter;
 public class Message {
 
   private int id;
+  @JsonIgnore
+  private int userID;
   private String content;
   private String sender;
   private LocalDateTime createdDate;
-  @JsonIgnore
-  private Status status;
+  @JsonIgnore private Status status;
 
   public Message(String content, String sender) {
     this.content = content;
@@ -1318,8 +1319,10 @@ public class Message {
     this.status = Status.UNREAD;
   }
 
-  public Message(int id, String content, String sender, LocalDateTime date, Status status) {
+  public Message(
+      int id, int userId, String content, String sender, LocalDateTime date, Status status) {
     this.id = id;
+    this.userID = userId;
     this.content = content;
     this.sender = sender;
     this.createdDate = date;
@@ -1378,20 +1381,21 @@ public class MessageRepository {
         .execute();
   }
 
-  public List<Message> findMessagesByUserId(int id) {
+  public List<Message> findMessagesByUserId(int userId) {
 
     Result<Record> messages =
-        context.select().from(Messages.MESSAGES).where(Messages.MESSAGES.USER_ID.eq(id)).fetch();
+        context.select().from(Messages.MESSAGES).where(Messages.MESSAGES.USER_ID.eq(userId)).fetch();
 
     List<Message> messageList = new ArrayList<>();
 
     for (Record message : messages) {
       int messageId = message.getValue(Messages.MESSAGES.ID, Integer.class);
+      int dbUserId = message.getValue(Messages.MESSAGES.USER_ID, Integer.class);
       String content = message.getValue(Messages.MESSAGES.CONTENT, String.class);
       String sender = message.getValue(Messages.MESSAGES.SENDER, String.class);
       String status = message.getValue(Messages.MESSAGES.STATUS, String.class);
       LocalDateTime date = message.getValue(Messages.MESSAGES.DATE, LocalDateTime.class);
-      Message newMessage = new Message(messageId, content, sender, date, Message.Status.valueOf(status));
+      Message newMessage = new Message(messageId, dbUserId,  content, sender, date, Message.Status.valueOf(status));
       messageList.add(newMessage);
     }
     return messageList;
@@ -1404,6 +1408,13 @@ public class MessageRepository {
         .where(Messages.MESSAGES.ID.eq(id))
         .execute();
   }
+
+  public void deleteMessage(int id) {
+
+    context.delete(Messages.MESSAGES)
+            .where(Messages.MESSAGES.ID.eq(id))
+            .execute();
+  }
 }
 ====================
 
@@ -1414,7 +1425,6 @@ package org.zwierzchowski.marcin.message;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import org.zwierzchowski.marcin.exception.DatabaseConnectionException;
 import org.zwierzchowski.marcin.exception.UserInboxIsFullException;
 import org.zwierzchowski.marcin.exception.UserNotFoundException;
@@ -1436,8 +1446,9 @@ public class MessageService {
     Message message = new Message(content, sender);
 
     User user = userDataService.getUser(recipient);
+    List<Message> messages = messageRepository.findMessagesByUserId(user.getId());
 
-    if (user.isUserInboxFull()) {
+    if (messages.size() >= user.getMaxUnreadMessages()){
       throw new UserInboxIsFullException("Recipient inbox is full", recipient);
     }
     messageRepository.saveMessage(message, user.getId());
@@ -1447,7 +1458,7 @@ public class MessageService {
       throws UserNotFoundException {
 
     User user = userDataService.getUser(username);
-    List<Message> messages = user.getMessages();
+    List<Message> messages =  messageRepository.findMessagesByUserId(user.getId());
     List<Message> unreadMessages = new ArrayList<>();
     if (!messages.isEmpty()) {
       for (Message m : messages) {
@@ -1464,9 +1475,23 @@ public class MessageService {
   public List<Message> getAllMessages(String username) throws UserNotFoundException {
 
     User user = userDataService.getUser(username);
-    List<Message> messages = user.getMessages();
+    List<Message> messages =  messageRepository.findMessagesByUserId(user.getId());
 
     return messages;
+  }
+
+  public boolean deleteMessage(String username, int id) throws UserNotFoundException {
+
+    User user = userDataService.getUser(username);
+    List<Message> messages =  messageRepository.findMessagesByUserId(user.getId());
+
+    for (Message m : messages) {
+      if (m.getId() == id) {
+        messageRepository.deleteMessage(id);
+        return true;
+      }
+    }
+    return false;
   }
 }
 ====================
@@ -1528,6 +1553,7 @@ public class Server {
         log.info("Client request: {}", clientRequest);
 
         String serverResponse = serverCommandService.handleRequest(clientRequest);
+
         if ("STOP_SERVER".equals(serverResponse)) {
           break;
         }
@@ -1575,7 +1601,8 @@ public class ServerCommandService {
   private ServerData serverData;
 
   public ServerCommandService(
-      ServerNetworkHandler serverNetworkHandler, Session session, ServerData serverData) throws DatabaseConnectionException {
+      ServerNetworkHandler serverNetworkHandler, Session session, ServerData serverData)
+      throws DatabaseConnectionException {
     this.serverNetworkHandler = serverNetworkHandler;
     this.session = session;
     this.serverData = serverData;
@@ -1596,6 +1623,7 @@ public class ServerCommandService {
         case SEND -> handleSendMessage();
         case READ_ALL -> handleReadAllMessages();
         case READ_UNREAD -> handleReadUnreadMessages();
+        case DELETE_MESSAGE -> handleDeleteMessage();
         case STOP -> handleStopServer();
         case UPTIME -> response.calculateUptime(serverData.getStartTime());
         case HELP -> response.printServerCommands(serverData.getCommandsInfo());
@@ -1604,6 +1632,23 @@ public class ServerCommandService {
       };
     } catch (Exception e) {
       return handleException(e);
+    }
+  }
+
+  private String handleDeleteMessage() throws IOException, UserNotFoundException {
+    if (!session.isUserLoggedIn()) {
+      return response.printText("No user logged in");
+    }
+
+    serverNetworkHandler.sendMessage(response.printText("Please provide message id to delete"));
+    String content = serverNetworkHandler.receiveMessage();
+
+    String sender = session.getLoggedInUser().getUsername();
+    boolean result = messageService.deleteMessage(sender, Integer.parseInt(content));
+    if (result) {
+      return response.printText("Message deleted successfully");
+    } else {
+      return response.printText("Message not found");
     }
   }
 
@@ -1725,41 +1770,17 @@ public class ServerCommandService {
     User user = session.getLoggedInUser();
     List<Message> messages = messageService.getUnreadMessages(user.getUsername());
     if (messages.isEmpty()) {
-      return response.printText("No messages");
+      return response.printText("No unread messages");
     }
     return response.printUnreadMessages(messages);
   }
 
   public String printOptions() throws JsonProcessingException {
-    if (session.isUserLoggedIn()) {
-      return printUserOptions();
+    if (session.isUserLoggedIn() && !session.isAdminLoggedIn()) {
+      return response.printText(serverData.printUserOptions());
     } else if (session.isAdminLoggedIn()) {
-      return printAdminOptions();
-    } else return printWelcomeOptions();
-  }
-
-  private String printWelcomeOptions() throws JsonProcessingException {
-
-    return response.printText("Type command: " + "LOGIN," + "REGISTER.");
-  }
-
-  private String printAdminOptions() throws JsonProcessingException {
-    String options =
-        "Type command: "
-            + "SEND, "
-            + "READ_ALL, "
-            + "READ_UNREAD, "
-            + "UPDATE_USER, "
-            + "DELETE_USER, "
-            + "HELP, "
-            + "LOGOUT.";
-    return response.printText(options);
-  }
-
-  private String printUserOptions() throws JsonProcessingException {
-    String options =
-        "Type command: " + "SEND, " + "READ_ALL, " + "READ_UNREAD, " + "HELP, " + "LOGOUT.";
-    return response.printText(options);
+      return response.printText(serverData.printAdminOptions());
+    } else return response.printText(serverData.printGuestOptions());
   }
 
   private String handleException(Exception e) throws JsonProcessingException {
@@ -1795,6 +1816,7 @@ public class ServerCommandService {
     SEND,
     READ_ALL,
     READ_UNREAD,
+    DELETE_MESSAGE,
     UPTIME,
     HELP,
     INFO,
@@ -1817,6 +1839,7 @@ FILE: .\client-server\src\main\java\org\zwierzchowski\marcin\server\ServerData.j
 
 package org.zwierzchowski.marcin.server;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.Getter;
 
 import java.time.Instant;
@@ -1828,7 +1851,7 @@ public class ServerData {
 
   private final Map<String, String> commandsInfo = new HashMap<>();
   private final Map<String, String> severInfo = new HashMap<>();
-  private static final String SERVER_VERSION = "0.2.0";
+  private static final String SERVER_VERSION = "0.3.0";
   private static final String SERVER_CREATION_DATE = "19.04.2024";
   private Instant startTime;
 
@@ -1853,6 +1876,30 @@ public class ServerData {
 
     startTime = Instant.now();
   }
+
+  public String printGuestOptions()  {
+
+      return "Type command: " + "LOGIN," + "REGISTER.";
+  }
+
+  public String printAdminOptions() {
+    String options =
+            "Type command: "
+                    + "SEND, "
+                    + "READ_ALL, "
+                    + "READ_UNREAD, "
+                    + "DELETE_MESSAGE, "
+                    + "UPDATE_USER, "
+                    + "DELETE_USER, "
+                    + "HELP, "
+                    + "LOGOUT.";
+    return options;
+  }
+
+  public String printUserOptions()  {
+      return "Type command: " + "SEND, " + "READ_ALL, " + "READ_UNREAD, "+ "DELETE_MESSAGE, " + "HELP, " + "LOGOUT.";
+  }
+
 }
 ====================
 
@@ -1985,7 +2032,7 @@ public class ServerResponse {
   public String printLoginStatus(boolean status) throws JsonProcessingException {
     Map<String, String> response = new HashMap<>();
     if (status) {
-      response.put("status", "User sucessfully logged in");
+      response.put("status", "User successfully logged in");
     } else {
       response.put("status", "Incorrect username or password");
     }
@@ -1996,7 +2043,7 @@ public class ServerResponse {
     Map<String, Message> messagesResponse = new LinkedHashMap<>();
     for (int i = 0; i < unreadMessages.size(); i++) {
       Message m = unreadMessages.get(i);
-      messagesResponse.put("Message " + (i + 1), m);
+      messagesResponse.put("Message " + (i+1) , m);
     }
     return mapper.writeValueAsString(messagesResponse);
   }
@@ -2019,11 +2066,11 @@ public class Session {
   private User loggedInUser;
 
   public boolean isUserLoggedIn() {
-    return loggedInUser != null && !loggedInUser.getRole().equals(User.Role.ADMIN);
+    return loggedInUser!= null && (loggedInUser.getRole().equals(User.Role.ADMIN) || loggedInUser.getRole().equals(User.Role.USER));
   }
 
   public boolean isAdminLoggedIn() {
-    return loggedInUser != null && loggedInUser.getRole().equals(User.Role.ADMIN);
+    return loggedInUser!= null && loggedInUser.getRole().equals(User.Role.ADMIN);
   }
 
   public void logoutUser() {
@@ -2037,11 +2084,8 @@ FILE: .\client-server\src\main\java\org\zwierzchowski\marcin\user\Admin.java
 
 package org.zwierzchowski.marcin.user;
 
-import java.util.ArrayList;
-import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
-import org.zwierzchowski.marcin.message.Message;
 
 @Getter
 @Setter
@@ -2049,16 +2093,11 @@ public class Admin extends User {
 
 
   public Admin(String username, String password) {
-    super(username, password, Role.ADMIN, new ArrayList<>());
+    super(username, password, Role.ADMIN, 100);
   }
 
-  public Admin(int id, String username, String password,  List<Message> messages) {
-    super(id, username, password, Role.ADMIN, messages);
-  }
-
-  @Override
-  public boolean isUserInboxFull() {
-    return false;
+  public Admin(int id, String username, String password) {
+    super(id, username, password, Role.ADMIN, 100);
   }
 }
 ====================
@@ -2107,34 +2146,21 @@ FILE: .\client-server\src\main\java\org\zwierzchowski\marcin\user\StandardUser.j
 
 package org.zwierzchowski.marcin.user;
 
-import java.util.ArrayList;
-import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
-import org.zwierzchowski.marcin.message.Message;
 
 @Getter
 @Setter
 public class StandardUser extends User {
 
-  private static final int MAX_UNREAD_MESSAGES = 4;
-
   public StandardUser(String username, String password) {
-    super(username, password, Role.USER, new ArrayList<>());
+    super(username, password, Role.USER,5);
   }
 
-  public StandardUser(int id,String username, String password, List<Message> messages) {
-  super(id,username, password, Role.USER, messages);
+  public StandardUser(int id, String username, String password) {
+    super(id, username, password, Role.USER,5);
   }
 
-  @Override
-  public boolean isUserInboxFull() {
-    long countUnread =
-        super.getMessages().stream()
-            .filter(m -> m.getStatus().equals(Message.Status.UNREAD))
-            .count();
-    return countUnread > MAX_UNREAD_MESSAGES;
-  }
 }
 ====================
 
@@ -2144,51 +2170,41 @@ FILE: .\client-server\src\main\java\org\zwierzchowski\marcin\user\User.java
 package org.zwierzchowski.marcin.user;
 
 
-import java.util.List;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
-import org.zwierzchowski.marcin.message.Message;
 
 @Getter
 @Setter
-@AllArgsConstructor
 public abstract class User {
+
+
 
   private int id;
   private String username;
   private String password;
   private Role role;
-  private List<Message> messages;
+  private  int maxUnreadMessages;
 
-  protected User(String username, String password, Role role, List<Message> messages) {
+  protected User(String username, String password, Role role, int maxUnreadMessages) {
     this.username = username;
     this.password = password;
     this.role = role;
-    this.messages = messages;
+    this.maxUnreadMessages = maxUnreadMessages;
   }
 
-  public void addMessage(Message message) {
-    messages.add(message);
+  protected User(int id,String username, String password, Role role, int maxUnreadMessages) {
+    this.id = id;
+    this.username = username;
+    this.password = password;
+    this.role = role;
+    this.maxUnreadMessages = maxUnreadMessages;
   }
-
-  public abstract boolean isUserInboxFull();
 
   public enum Role {
     USER,
     ADMIN
   }
 
-  @Override
-  public String toString() {
-    return "User{" +
-            "id=" + id +
-            ", username='" + username + '\'' +
-            ", password='" + password + '\'' +
-            ", role=" + role +
-            ", messages=" + messages +
-            '}';
-  }
 }
 ====================
 
@@ -2197,23 +2213,20 @@ FILE: .\client-server\src\main\java\org\zwierzchowski\marcin\user\UserDataServic
 
 package org.zwierzchowski.marcin.user;
 
-import java.util.List;
+
 import org.mindrot.jbcrypt.BCrypt;
 import org.zwierzchowski.marcin.exception.DatabaseConnectionException;
 import org.zwierzchowski.marcin.exception.InvalidCredentialsFormatException;
 import org.zwierzchowski.marcin.exception.InvalidPasswordException;
 import org.zwierzchowski.marcin.exception.UserNotFoundException;
-import org.zwierzchowski.marcin.message.Message;
-import org.zwierzchowski.marcin.message.MessageRepository;
 
 public class UserDataService {
 
   private UserRepository userRepository;
-  private MessageRepository messageRepository;
+
 
   public UserDataService() throws DatabaseConnectionException {
     userRepository = new UserRepository();
-    messageRepository = new MessageRepository();
   }
 
   public User addUser(String username, String password, String role)
@@ -2248,8 +2261,6 @@ public class UserDataService {
   public User getUser(String username) throws UserNotFoundException {
 
     User user = userRepository.findByUsername(username);
-    List<Message> messages = messageRepository.findMessagesByUserId(user.getId());
-    user.setMessages(messages);
 
     return user;
   }
@@ -2300,8 +2311,7 @@ public class UserRepository {
         .execute();
   }
 
-  public User findByUsername(String username)
-      throws UserNotFoundException {
+  public User findByUsername(String username) throws UserNotFoundException {
 
     Record userRecord =
         context.select().from(Users.USERS).where(Users.USERS.USERNAME.eq(username)).fetchOne();
@@ -2317,8 +2327,8 @@ public class UserRepository {
 
     User user =
         switch (role.toLowerCase()) {
-          case "user" -> new StandardUser(id, usernameDb, password, null);
-          case "admin" -> new Admin(id, usernameDb, password, null);
+          case "user" -> new StandardUser(id, usernameDb, password);
+          case "admin" -> new Admin(id, usernameDb, password);
           default -> throw new IllegalArgumentException("Unexpected value: " + role);
         };
     return user;
@@ -2419,7 +2429,7 @@ public class DataBaseManager {
       password = properties.getProperty("password");
       url = properties.getProperty("url");
     } catch (Exception e) {
-      e.printStackTrace();
+      log.error("Failed to load database credentials", e);
     }
   }
 }

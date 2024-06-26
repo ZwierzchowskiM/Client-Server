@@ -57,19 +57,17 @@ class UserDataServiceTest {
 
   @Test
   @DisplayName("Should return standard user")
-  void shouldReturnUserWithAdminRole() throws IOException, InvalidCredentialsFormatException {
+  void shouldReturnUserWithAdminRole() throws InvalidCredentialsFormatException {
 
     role = "admin";
 
-    try (MockedStatic<FileService> fileServiceMock = Mockito.mockStatic(FileService.class)) {
-      fileServiceMock.when(FileService::loadDataBase).thenReturn(users);
       User newUser = userDataService.addUser(username, password, role);
 
       assertNotNull(newUser);
       assertTrue(newUser instanceof Admin);
       assertEquals(username, newUser.getUsername());
       assertTrue(BCrypt.checkpw(password, newUser.getPassword()));
-    }
+
   }
 
   @Test
@@ -78,19 +76,18 @@ class UserDataServiceTest {
 
     role = "invalidRole";
 
-    try (MockedStatic<FileService> fileServiceMock = Mockito.mockStatic(FileService.class)) {
-      fileServiceMock.when(FileService::loadDataBase).thenReturn(users);
+
 
       assertThrows(
           InvalidCredentialsFormatException.class,
           () -> userDataService.addUser(username, password, role));
-    }
+
   }
 
   @Test
   @DisplayName("Should return testUser when username is valid")
   void shouldReturnUserWhenValidUsername()
-      throws IOException, UserNotFoundException {
+      throws UserNotFoundException {
 
     users.put(username, testUser);
 

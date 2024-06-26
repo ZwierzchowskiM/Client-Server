@@ -196,42 +196,17 @@ public class ServerCommandService {
     User user = session.getLoggedInUser();
     List<Message> messages = messageService.getUnreadMessages(user.getUsername());
     if (messages.isEmpty()) {
-      return response.printText("No messages");
+      return response.printText("No unread messages");
     }
     return response.printUnreadMessages(messages);
   }
 
   public String printOptions() throws JsonProcessingException {
     if (session.isUserLoggedIn() && !session.isAdminLoggedIn()) {
-      return printUserOptions();
+      return response.printText(serverData.printUserOptions());
     } else if (session.isAdminLoggedIn()) {
-      return printAdminOptions();
-    } else return printWelcomeOptions();
-  }
-
-  private String printWelcomeOptions() throws JsonProcessingException {
-
-    return response.printText("Type command: " + "LOGIN," + "REGISTER.");
-  }
-
-  private String printAdminOptions() throws JsonProcessingException {
-    String options =
-        "Type command: "
-            + "SEND, "
-            + "READ_ALL, "
-            + "READ_UNREAD, "
-            + "DELETE_MESSAGE, "
-            + "UPDATE_USER, "
-            + "DELETE_USER, "
-            + "HELP, "
-            + "LOGOUT.";
-    return response.printText(options);
-  }
-
-  private String printUserOptions() throws JsonProcessingException {
-    String options =
-        "Type command: " + "SEND, " + "READ_ALL, " + "READ_UNREAD, " + "HELP, " + "LOGOUT.";
-    return response.printText(options);
+      return response.printText(serverData.printAdminOptions());
+    } else return response.printText(serverData.printGuestOptions());
   }
 
   private String handleException(Exception e) throws JsonProcessingException {

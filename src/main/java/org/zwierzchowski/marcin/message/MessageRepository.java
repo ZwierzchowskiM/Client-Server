@@ -35,21 +35,21 @@ public class MessageRepository {
         .execute();
   }
 
-  public List<Message> findMessagesByUserId(int id) {
+  public List<Message> findMessagesByUserId(int userId) {
 
     Result<Record> messages =
-        context.select().from(Messages.MESSAGES).where(Messages.MESSAGES.USER_ID.eq(id)).fetch();
+        context.select().from(Messages.MESSAGES).where(Messages.MESSAGES.USER_ID.eq(userId)).fetch();
 
     List<Message> messageList = new ArrayList<>();
 
     for (Record message : messages) {
       int messageId = message.getValue(Messages.MESSAGES.ID, Integer.class);
-      int userId = message.getValue(Messages.MESSAGES.USER_ID, Integer.class);
+      int dbUserId = message.getValue(Messages.MESSAGES.USER_ID, Integer.class);
       String content = message.getValue(Messages.MESSAGES.CONTENT, String.class);
       String sender = message.getValue(Messages.MESSAGES.SENDER, String.class);
       String status = message.getValue(Messages.MESSAGES.STATUS, String.class);
       LocalDateTime date = message.getValue(Messages.MESSAGES.DATE, LocalDateTime.class);
-      Message newMessage = new Message(messageId, userId,  content, sender, date, Message.Status.valueOf(status));
+      Message newMessage = new Message(messageId, dbUserId,  content, sender, date, Message.Status.valueOf(status));
       messageList.add(newMessage);
     }
     return messageList;

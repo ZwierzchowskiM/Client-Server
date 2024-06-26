@@ -15,7 +15,7 @@ public class Client {
 
   public static void main(String[] args) {
     Client client = new Client();
-    client.communicateServer();
+    client.communicateWithServer();
   }
 
   public Client() {
@@ -28,7 +28,7 @@ public class Client {
     }
   }
 
-  private void communicateServer() {
+  private void communicateWithServer() {
     while (!clientNetworkHandler.getSocket().isClosed()) {
       try {
         handleServerResponse();

@@ -46,7 +46,7 @@ public class ServerResponse {
   public String printLoginStatus(boolean status) throws JsonProcessingException {
     Map<String, String> response = new HashMap<>();
     if (status) {
-      response.put("status", "User sucessfully logged in");
+      response.put("status", "User successfully logged in");
     } else {
       response.put("status", "Incorrect username or password");
     }
@@ -57,7 +57,7 @@ public class ServerResponse {
     Map<String, Message> messagesResponse = new LinkedHashMap<>();
     for (int i = 0; i < unreadMessages.size(); i++) {
       Message m = unreadMessages.get(i);
-      messagesResponse.put("Message", m);
+      messagesResponse.put("Message " + (i+1) , m);
     }
     return mapper.writeValueAsString(messagesResponse);
   }
