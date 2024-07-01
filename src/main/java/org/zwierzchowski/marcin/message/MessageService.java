@@ -13,9 +13,9 @@ public class MessageService {
   MessageRepository messageRepository;
   UserDataService userDataService;
 
-  public MessageService() throws DatabaseConnectionException {
-    messageRepository = new MessageRepository();
-    userDataService = new UserDataService();
+  public MessageService(MessageRepository messageRepository, UserDataService userDataService) throws DatabaseConnectionException {
+    this.messageRepository = messageRepository;
+    this.userDataService = userDataService;
   }
 
   public void sendMessage(String recipient, String content, String sender)

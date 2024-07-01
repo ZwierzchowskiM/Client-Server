@@ -8,6 +8,7 @@ import java.util.List;
 import lombok.extern.log4j.Log4j2;
 import org.zwierzchowski.marcin.exception.*;
 import org.zwierzchowski.marcin.message.Message;
+import org.zwierzchowski.marcin.message.MessageRepository;
 import org.zwierzchowski.marcin.message.MessageService;
 import org.zwierzchowski.marcin.user.User;
 import org.zwierzchowski.marcin.user.UserDataService;
@@ -19,12 +20,13 @@ import org.zwierzchowski.marcin.utils.MessageValidator;
 @Log4j2
 public class ServerCommandService {
 
-  private UserDataService userDataService;
   private MessageService messageService;
   private ServerResponse response;
   private ServerNetworkHandler serverNetworkHandler;
   private Session session;
   private ServerData serverData;
+  private UserDataService userDataService = new UserDataService();
+  private MessageRepository messageRepository = new MessageRepository();
 
   public ServerCommandService(
       ServerNetworkHandler serverNetworkHandler, Session session, ServerData serverData)
@@ -33,8 +35,7 @@ public class ServerCommandService {
     this.session = session;
     this.serverData = serverData;
     this.response = new ServerResponse();
-    this.userDataService = new UserDataService();
-    this.messageService = new MessageService();
+    this.messageService = new MessageService(messageRepository, userDataService);
   }
 
   public String handleRequest(String clientRequest) throws JsonProcessingException {

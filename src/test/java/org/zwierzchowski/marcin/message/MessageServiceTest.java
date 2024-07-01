@@ -1,58 +1,94 @@
 package org.zwierzchowski.marcin.message;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.zwierzchowski.marcin.exception.DatabaseConnectionException;
 import org.zwierzchowski.marcin.exception.UserInboxIsFullException;
 import org.zwierzchowski.marcin.exception.UserNotFoundException;
 import org.zwierzchowski.marcin.user.StandardUser;
 import org.zwierzchowski.marcin.user.User;
-import org.zwierzchowski.marcin.utils.FileService;
+import org.zwierzchowski.marcin.user.UserDataService;
 
 class MessageServiceTest {
 
-  private MessageService messageService;
   private String recipient;
   private String content;
   private String sender;
   private User userRecipient;
   private User userSender;
-  private Map<String, User> users;
+  private List<User> users;
+
+  @Mock
+  private UserDataService userDataService;
+
+  @Mock
+  private MessageRepository messageRepository;
+
+  @InjectMocks
+  private MessageService messageService;
 
   @BeforeEach
   void setUp() throws DatabaseConnectionException {
 
-    messageService = new MessageService();
+    MockitoAnnotations.openMocks(this);
     recipient = "recipient";
     content = "Test message";
     sender = "sender";
     userRecipient = new StandardUser("john", "pass");
     userSender = new StandardUser("tom", "pass");
-    users = new HashMap<>();
+    users = new ArrayList<>();
   }
 
-//  @Test
-//  @DisplayName("Send message to user and check if is placed in inbox")
-//  void shouldAddMessageToRecipientInbox() {
-//
-//    users.put(recipient, userRecipient);
-//    users.put(sender, userSender);
-//
-//    try (MockedStatic<FileService> fileServiceMock = Mockito.mockStatic(FileService.class)) {
-//      fileServiceMock.when(FileService::loadDataBase).thenReturn(users);
-//      assertEquals(0, userRecipient.getMessages().size());
-//      assertDoesNotThrow(() -> messageService.sendMessage(recipient, content, sender));
-//      assertEquals(1, userRecipient.getMessages().size());
-//    }
-//  }
+  @Test
+  @DisplayName("Send message success")
+  void shouldSendMessageSuccessfully() throws UserNotFoundException, UserInboxIsFullException {
+
+    User user = new StandardUser(1, "john", "pass");
+    List<Message> messages = Arrays.asList(new Message[3]);
+
+    when(userDataService.getUser(recipient)).thenReturn(user);
+    when(messageRepository.findMessagesByUserId(user.getId())).thenReturn(messages);
+
+    messageService.sendMessage(recipient, content, sender);
+    verify(messageRepository, times(1)).saveMessage(any(Message.class), eq(user.getId()));
+  }
+
+  @Test
+  @DisplayName("Send message to not existed user should throw UserNotExistException")
+  public void shouldThrowUserNotFoundExceptionWhenRecipientNotExists() throws Exception {
+
+    when(userDataService.getUser(recipient)).thenThrow(new UserNotFoundException( "User not found", recipient));
+
+    assertThrows(UserNotFoundException.class, () -> {
+      messageService.sendMessage(recipient, content, sender);
+    });
+  }
+
+  @Test
+  public void shouldThrowUserInboxIsFullExceptionWhenRecipientInboxIsFull() throws Exception {
+
+
+    User user = new StandardUser(1, "john", "pass");
+
+    List<Message> messages = Arrays.asList(new Message[10]); // Mock 10 messages to fill the inbox
+
+    when(userDataService.getUser(recipient)).thenReturn(user);
+    when(messageRepository.findMessagesByUserId(user.getId())).thenReturn(messages);
+
+    assertThrows(UserInboxIsFullException.class, () -> {
+      messageService.sendMessage(recipient, content, sender);
+    });
+  }
+
+
 
 //  @Test
 //  @DisplayName("Send message to not existed user should throw UserNotExistException")
