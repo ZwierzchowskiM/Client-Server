@@ -12,6 +12,7 @@ import org.zwierzchowski.marcin.message.MessageRepository;
 import org.zwierzchowski.marcin.message.MessageService;
 import org.zwierzchowski.marcin.user.User;
 import org.zwierzchowski.marcin.user.UserDataService;
+import org.zwierzchowski.marcin.user.UserRepository;
 import org.zwierzchowski.marcin.user.dto.UserLoginDTO;
 import org.zwierzchowski.marcin.user.dto.UserRegistrationDTO;
 import org.zwierzchowski.marcin.utils.CredentialsValidator;
@@ -21,12 +22,13 @@ import org.zwierzchowski.marcin.utils.MessageValidator;
 public class ServerCommandService {
 
   private MessageService messageService;
+  private UserDataService userDataService;
   private ServerResponse response;
   private ServerNetworkHandler serverNetworkHandler;
   private Session session;
   private ServerData serverData;
-  private UserDataService userDataService = new UserDataService();
   private MessageRepository messageRepository = new MessageRepository();
+  private UserRepository userRepository = new UserRepository();
 
   public ServerCommandService(
       ServerNetworkHandler serverNetworkHandler, Session session, ServerData serverData)
@@ -36,6 +38,7 @@ public class ServerCommandService {
     this.serverData = serverData;
     this.response = new ServerResponse();
     this.messageService = new MessageService(messageRepository, userDataService);
+    this.userDataService = new UserDataService(userRepository);
   }
 
   public String handleRequest(String clientRequest) throws JsonProcessingException {

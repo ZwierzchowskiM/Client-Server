@@ -4,12 +4,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mindrot.jbcrypt.BCrypt;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
+import org.mockito.*;
 import org.zwierzchowski.marcin.exception.DatabaseConnectionException;
 import org.zwierzchowski.marcin.exception.InvalidCredentialsFormatException;
 import org.zwierzchowski.marcin.exception.InvalidPasswordException;
 import org.zwierzchowski.marcin.exception.UserNotFoundException;
+import org.zwierzchowski.marcin.message.MessageRepository;
+import org.zwierzchowski.marcin.message.MessageService;
 import org.zwierzchowski.marcin.utils.FileService;
 
 import java.io.IOException;
@@ -20,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class UserDataServiceTest {
 
-  private UserDataService userDataService;
   private Map<String, User> users;
   private User testUser;
   private String username;
@@ -28,9 +28,16 @@ class UserDataServiceTest {
   private String hashedPassword;
   private String role;
 
+  @Mock private UserRepository userRepository;
+
+  @InjectMocks
+  private UserDataService userDataService;
+
+
   @BeforeEach
   void setUp() throws DatabaseConnectionException {
-    userDataService = new UserDataService();
+
+    MockitoAnnotations.openMocks(this);
     users = new HashMap<>();
     username = "john";
     password = "pass";

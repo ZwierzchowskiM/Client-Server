@@ -2,7 +2,6 @@ package org.zwierzchowski.marcin.user;
 
 
 import org.mindrot.jbcrypt.BCrypt;
-import org.zwierzchowski.marcin.exception.DatabaseConnectionException;
 import org.zwierzchowski.marcin.exception.InvalidCredentialsFormatException;
 import org.zwierzchowski.marcin.exception.InvalidPasswordException;
 import org.zwierzchowski.marcin.exception.UserNotFoundException;
@@ -11,9 +10,8 @@ public class UserDataService {
 
   private UserRepository userRepository;
 
-
-  public UserDataService() throws DatabaseConnectionException {
-    userRepository = new UserRepository();
+  public UserDataService(UserRepository userRepository) {
+    this.userRepository = userRepository;
   }
 
   public User addUser(String username, String password, String role)
