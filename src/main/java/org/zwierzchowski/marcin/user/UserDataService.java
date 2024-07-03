@@ -1,6 +1,5 @@
 package org.zwierzchowski.marcin.user;
 
-
 import org.mindrot.jbcrypt.BCrypt;
 import org.zwierzchowski.marcin.exception.InvalidCredentialsFormatException;
 import org.zwierzchowski.marcin.exception.InvalidPasswordException;
@@ -45,9 +44,7 @@ public class UserDataService {
 
   public User getUser(String username) throws UserNotFoundException {
 
-    User user = userRepository.findByUsername(username);
-
-    return user;
+    return userRepository.findByUsername(username);
   }
 
   public void deleteUser(String username) throws UserNotFoundException {
