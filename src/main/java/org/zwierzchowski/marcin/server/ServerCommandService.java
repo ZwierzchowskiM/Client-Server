@@ -253,12 +253,18 @@ public class ServerCommandService {
     STOP,
     UNKNOWN;
 
+    @Override
+    public String toString() {
+      return this.name().toLowerCase();
+    }
+
     public static Command fromString(String command) {
-      try {
-        return Command.valueOf(command.toUpperCase());
-      } catch (IllegalArgumentException e) {
-        return UNKNOWN;
+      for (Command c : values()) {
+        if (c.toString().equals(command.toLowerCase())) {
+          return c;
+        }
       }
+      return UNKNOWN;
     }
   }
 }

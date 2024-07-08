@@ -11,8 +11,6 @@ public class ServerData {
 
   private final Map<String, String> commandsInfo = new HashMap<>();
   private final Map<String, String> severInfo = new HashMap<>();
-  private static final String SERVER_VERSION = "0.3.0";
-  private static final String SERVER_CREATION_DATE = "19.04.2024";
   private Instant startTime;
 
   public ServerData() {
@@ -31,8 +29,8 @@ public class ServerData {
     commandsInfo.put("send", "Send message to another user");
     commandsInfo.put("read", "Read unread messages in inbox");
 
-    severInfo.put("version", SERVER_VERSION);
-    severInfo.put("creation date", SERVER_CREATION_DATE);
+    severInfo.put("version", ServerConstants.SERVER_VERSION);
+    severInfo.put("creation date", ServerConstants.SERVER_CREATION_DATE);
 
     startTime = Instant.now();
   }
